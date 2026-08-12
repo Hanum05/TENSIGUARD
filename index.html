@@ -70,8 +70,16 @@
                 <div class="bg-primary text-white p-1.5 rounded-md"><i class="fa-solid fa-heart-pulse text-sm"></i></div>
                 <h1 class="text-lg font-bold text-dark">TENSIGUARD</h1>
             </div>
-            <button @click="currentView = 'pro'" class="text-xs bg-slate-800 text-white px-3 py-1.5 rounded-full font-medium">PRO View</button>
+            <div class="flex items-center gap-2">
+                <button @click="showGuide = true" class="text-slate-500 p-2 hover:text-primary"><i class="fa-solid fa-circle-question text-lg"></i></button>
+                <button @click="currentView = 'pro'" class="text-xs bg-slate-800 text-white px-3 py-1.5 rounded-full font-medium">PRO View</button>
+            </div>
         </div>
+
+        <!-- Global Guide Button (Desktop) -->
+        <button @click="showGuide = true" class="hidden md:flex fixed top-6 right-8 z-40 bg-white border border-slate-200 shadow-sm px-4 py-2 rounded-full items-center gap-2 text-slate-600 hover:text-primary hover:border-primary transition font-medium cursor-pointer">
+            <i class="fa-solid fa-circle-question"></i> Panduan Penggunaan
+        </button>
 
         <!-- Main Content Area -->
         <main class="flex-grow p-4 md:p-8 max-w-5xl mx-auto w-full overflow-y-auto">
@@ -250,14 +258,48 @@
                     <!-- Step 2: AI Vision Simulator -->
                     <div v-if="measureStep === 2" class="bg-white rounded-2xl shadow-sm border border-slate-100 p-6 slide-up-enter-active text-center">
                         <div v-if="!isScanning">
-                            <div class="w-full max-w-md mx-auto aspect-[4/3] bg-slate-100 rounded-xl border-2 border-dashed border-slate-300 flex flex-col items-center justify-center p-6 mb-6">
-                                <i class="fa-solid fa-camera text-5xl text-slate-300 mb-4"></i>
-                                <p class="text-slate-500 mb-2">Arahkan kamera ke layar tensimeter digital Anda</p>
-                                <p class="text-xs text-slate-400">AI Vision akan membaca angka secara otomatis</p>
+                            <!-- Toggle Mode -->
+                            <div class="flex justify-center gap-4 mb-6">
+                                <button @click="captureMode = 'camera'" :class="['px-4 py-2 rounded-lg font-medium transition text-sm flex items-center gap-2', captureMode === 'camera' ? 'bg-primary text-white shadow-md' : 'bg-slate-100 text-slate-600 hover:bg-slate-200']">
+                                    <i class="fa-solid fa-camera"></i> Kamera Langsung
+                                </button>
+                                <button @click="captureMode = 'upload'" :class="['px-4 py-2 rounded-lg font-medium transition text-sm flex items-center gap-2', captureMode === 'upload' ? 'bg-primary text-white shadow-md' : 'bg-slate-100 text-slate-600 hover:bg-slate-200']">
+                                    <i class="fa-solid fa-upload"></i> Unggah Foto
+                                </button>
                             </div>
-                            <div class="flex gap-4 justify-center">
-                                <button @click="simulateScan('normal')" class="bg-slate-800 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-slate-700">Simulasi (Normal)</button>
-                                <button @click="simulateScan('high')" class="bg-danger text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-red-700">Simulasi (Tinggi - Demo)</button>
+
+                            <!-- Camera View -->
+                            <div v-if="captureMode === 'camera'" class="w-full max-w-md mx-auto aspect-[4/3] bg-black rounded-xl overflow-hidden relative mb-6 shadow-inner flex items-center justify-center">
+                                <video ref="videoElement" autoplay playsinline class="w-full h-full object-cover z-10" v-show="videoStream"></video>
+                                <div v-if="!videoStream" class="absolute inset-0 flex flex-col items-center justify-center text-white/50 z-0">
+                                    <i class="fa-solid fa-video-slash text-4xl mb-3"></i>
+                                    <p class="text-sm">Menyiapkan kamera...</p>
+                                    <p class="text-xs mt-1">Pastikan izin kamera diberikan.</p>
+                                </div>
+                            </div>
+
+                            <!-- Upload View -->
+                            <div v-if="captureMode === 'upload'" @click="triggerUpload" class="w-full max-w-md mx-auto aspect-[4/3] bg-slate-50 rounded-xl border-2 border-dashed border-slate-300 flex flex-col items-center justify-center p-6 mb-6 cursor-pointer hover:bg-slate-100 transition relative overflow-hidden group">
+                                <input type="file" ref="fileInput" @change="handleFileUpload" accept="image/*" class="hidden">
+                                <img v-if="imagePreview" :src="imagePreview" class="absolute inset-0 w-full h-full object-cover z-10" />
+                                <div v-if="imagePreview" class="absolute inset-0 bg-black/40 z-20 flex flex-col items-center justify-center opacity-0 group-hover:opacity-100 transition">
+                                    <i class="fa-solid fa-pen text-white text-3xl mb-2"></i>
+                                    <p class="text-white font-medium">Ganti Foto</p>
+                                </div>
+                                <div v-else class="z-20 text-slate-400 flex flex-col items-center">
+                                    <i class="fa-solid fa-cloud-arrow-up text-5xl mb-4 text-slate-300 group-hover:text-primary transition"></i>
+                                    <p class="text-slate-600 font-medium mb-1">Klik untuk memilih foto dari galeri</p>
+                                    <p class="text-xs">Mendukung format PNG, JPG (Max. 5MB)</p>
+                                </div>
+                            </div>
+
+                            <div class="flex flex-col gap-3 justify-center max-w-md mx-auto mt-2 p-4 bg-blue-50 border border-blue-100 rounded-xl">
+                                <p class="text-sm text-blue-800 font-bold mb-1"><i class="fa-solid fa-wand-magic-sparkles mr-1"></i> Mulai Ekstraksi AI</p>
+                                <p class="text-xs text-blue-600 mb-2">Simulasi untuk demo: Pilih hasil yang ingin disimulasikan dari pemindaian ini.</p>
+                                <div class="flex gap-3 justify-center">
+                                    <button @click="simulateScan('normal')" class="bg-primary text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-blue-700 flex-1 shadow-sm transition">Normal (122/82)</button>
+                                    <button @click="simulateScan('high')" class="bg-orange-500 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-orange-600 flex-1 shadow-sm transition">Tinggi (160/100)</button>
+                                </div>
                             </div>
                         </div>
                         
@@ -650,6 +692,49 @@
             </div>
         </div>
 
+        <!-- Panduan Penggunaan Modal -->
+        <div v-if="showGuide" class="fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-50 flex items-center justify-center p-4 slide-up-enter-active">
+            <div class="bg-white w-full max-w-lg rounded-2xl shadow-xl overflow-hidden flex flex-col max-h-[90vh]">
+                <div class="bg-slate-800 p-4 text-white flex justify-between items-center">
+                    <h3 class="font-bold"><i class="fa-solid fa-book-open-reader mr-2"></i> Panduan Penggunaan</h3>
+                    <button @click="showGuide = false" class="text-slate-300 hover:text-white"><i class="fa-solid fa-times text-xl"></i></button>
+                </div>
+                <div class="p-6 overflow-y-auto text-slate-700 bg-slate-50 flex-grow space-y-6">
+                    <div class="flex gap-4 items-start bg-white p-4 rounded-xl shadow-sm border border-slate-100">
+                        <div class="bg-blue-100 text-primary w-8 h-8 rounded-full flex items-center justify-center font-bold flex-shrink-0">1</div>
+                        <div>
+                            <h4 class="font-bold text-slate-800">Lengkapi Profil</h4>
+                            <p class="text-sm text-slate-600 mt-1">Buka menu <b>Tensi-Profile</b> dan lengkapi data diri Anda (usia, BB, TB, riwayat). AI membutuhkan konteks ini untuk memberikan rekomendasi medis yang personal.</p>
+                        </div>
+                    </div>
+                    <div class="flex gap-4 items-start bg-white p-4 rounded-xl shadow-sm border border-slate-100">
+                        <div class="bg-blue-100 text-primary w-8 h-8 rounded-full flex items-center justify-center font-bold flex-shrink-0">2</div>
+                        <div>
+                            <h4 class="font-bold text-slate-800">Mulai Pengukuran</h4>
+                            <p class="text-sm text-slate-600 mt-1">Klik <b>Ukur & AI Vision</b> di menu navigasi, atau tekan tombol <b>Mulai Pengukuran Baru</b> yang ada di beranda Anda.</p>
+                        </div>
+                    </div>
+                    <div class="flex gap-4 items-start bg-white p-4 rounded-xl shadow-sm border border-slate-100">
+                        <div class="bg-blue-100 text-primary w-8 h-8 rounded-full flex items-center justify-center font-bold flex-shrink-0">3</div>
+                        <div>
+                            <h4 class="font-bold text-slate-800">Pilih Alat & Pindai</h4>
+                            <p class="text-sm text-slate-600 mt-1">Pilih tensimeter yang akan digunakan (sistem akan mengecek kalibrasinya). Kemudian, pilih untuk menggunakan <b>Kamera Langsung</b> atau <b>Unggah Foto</b> layar tensimeter Anda.</p>
+                        </div>
+                    </div>
+                    <div class="flex gap-4 items-start bg-white p-4 rounded-xl shadow-sm border border-slate-100">
+                        <div class="bg-blue-100 text-primary w-8 h-8 rounded-full flex items-center justify-center font-bold flex-shrink-0">4</div>
+                        <div>
+                            <h4 class="font-bold text-slate-800">Verifikasi & Analisis Risiko</h4>
+                            <p class="text-sm text-slate-600 mt-1">AI akan mendeteksi angka secara otomatis. Verifikasi kecocokannya. TENSIGUARD kemudian akan menghitung skor risiko (Tensi-Diagnose) dan memberikan langkah tindak lanjut (Tensi-Care).</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="p-4 bg-white border-t border-slate-200">
+                    <button @click="showGuide = false" class="w-full bg-primary text-white py-3 rounded-xl font-bold hover:bg-blue-700 transition shadow-md">Saya Mengerti</button>
+                </div>
+            </div>
+        </div>
+
     </div>
 
     <script>
@@ -679,7 +764,11 @@
                     symptoms: { chestPain: false, shortnessBreath: false, vision: false, speech: false, weakness: false, confusion: false },
                     currentRead: { sys: null, dia: null, pulse: null },
                     showReport: false,
-                    chartInstance: null
+                    chartInstance: null,
+                    showGuide: false,
+                    captureMode: 'camera', // 'camera' or 'upload'
+                    videoStream: null,
+                    imagePreview: null
                 }
             },
             computed: {
@@ -792,6 +881,34 @@
                 }
             },
             methods: {
+                startCamera() {
+                    if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) return;
+                    navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } })
+                        .then(stream => {
+                            this.videoStream = stream;
+                            if (this.$refs.videoElement) {
+                                this.$refs.videoElement.srcObject = stream;
+                            }
+                        })
+                        .catch(err => {
+                            console.error("Gagal mengakses kamera:", err);
+                        });
+                },
+                stopCamera() {
+                    if (this.videoStream) {
+                        this.videoStream.getTracks().forEach(track => track.stop());
+                        this.videoStream = null;
+                    }
+                },
+                triggerUpload() {
+                    this.$refs.fileInput.click();
+                },
+                handleFileUpload(event) {
+                    const file = event.target.files[0];
+                    if (file) {
+                        this.imagePreview = URL.createObjectURL(file);
+                    }
+                },
                 startMeasurement() {
                     this.measureStep = 1;
                     this.selectedDevice = null;
@@ -804,6 +921,7 @@
                     this.selectedDevice = device;
                 },
                 simulateScan(type) {
+                    this.stopCamera(); // Matikan kamera saat mulai pemindaian
                     this.isScanning = true;
                     // Simulasi delay AI Processing (2 detik)
                     setTimeout(() => {
@@ -902,7 +1020,27 @@
                             this.renderChart();
                         }, 100);
                     }
+                    if(newVal !== 'measure') {
+                        this.stopCamera();
+                    }
+                },
+                measureStep(newVal) {
+                    if (newVal === 2 && this.captureMode === 'camera') {
+                        this.$nextTick(() => { this.startCamera(); });
+                    } else {
+                        this.stopCamera();
+                    }
+                },
+                captureMode(newVal) {
+                    if (newVal === 'camera') {
+                        this.$nextTick(() => { this.startCamera(); });
+                    } else {
+                        this.stopCamera();
+                    }
                 }
+            },
+            beforeUnmount() {
+                this.stopCamera();
             }
         });
 

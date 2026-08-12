@@ -903,7 +903,7 @@
                             <p class="text-slate-500 text-base mt-1">Sistem Manajemen Mutu & Kalibrasi Alat Kesehatan Sentral.</p>
                         </div>
                         <div class="flex gap-2">
-                            <button @click="exportCSV" class="bg-white border border-slate-200 text-slate-600 px-4 py-2 rounded-xl text-sm font-bold shadow-sm hover:bg-slate-50 flex items-center gap-2"><i class="fa-solid fa-file-csv"></i> Export CSV</button>
+                            <button @click="showProReport = true" class="bg-white border border-slate-200 text-slate-600 px-4 py-2 rounded-xl text-sm font-bold shadow-sm hover:bg-slate-50 flex items-center gap-2"><i class="fa-solid fa-file-pdf"></i> Export Laporan</button>
                             <button @click="showAddDeviceModal = true" class="bg-primary text-white px-4 py-2 rounded-xl text-sm font-bold shadow-sm shadow-blue-200 hover:bg-blue-600 flex items-center gap-2"><i class="fa-solid fa-plus"></i> Tambah Alat</button>
                         </div>
                     </div>
@@ -1177,6 +1177,120 @@
             </div>
         </div>
 
+        <!-- Pro Inventory Report Modal (PDF Preview) -->
+        <div v-if="showProReport" class="fixed inset-0 bg-slate-900/80 backdrop-blur-sm z-50 flex flex-col items-center justify-center p-0 md:p-6 slide-up-enter-active">
+            
+            <!-- Floating Header untuk aksi download -->
+            <div class="absolute top-0 left-0 right-0 p-4 flex justify-between items-center z-20 bg-slate-900/50 backdrop-blur-md border-b border-white/10 md:static md:bg-transparent md:border-none md:p-0 md:mb-4 md:w-full md:max-w-[800px]">
+                <div class="text-white hidden md:block">
+                    <h3 class="font-bold text-xl"><i class="fa-solid fa-boxes-stacked text-blue-400 mr-2"></i> Pratinjau Laporan Inventaris</h3>
+                    <p class="text-xs text-slate-400 mt-1">Laporan Fasilitas Medis TensiGuard PRO</p>
+                </div>
+                <div class="flex items-center gap-3 w-full justify-between md:justify-end md:w-auto">
+                    <button @click="showProReport = false" class="bg-white/10 hover:bg-white/20 p-2.5 md:px-4 md:py-2.5 rounded-xl text-white transition flex items-center justify-center">
+                        <i class="fa-solid fa-times md:mr-2"></i><span class="hidden md:inline font-bold text-sm">Tutup</span>
+                    </button>
+                    <button @click="downloadProPDF" :disabled="isDownloading" class="bg-primary hover:bg-blue-600 text-white px-5 py-2.5 rounded-xl font-bold transition flex items-center gap-2 shadow-lg shadow-blue-500/30">
+                        <i v-if="isDownloading" class="fa-solid fa-circle-notch animate-spin"></i>
+                        <i v-else class="fa-solid fa-download"></i>
+                        <span class="text-sm">{{ isDownloading ? 'Memproses...' : 'Unduh PDF' }}</span>
+                    </button>
+                </div>
+            </div>
+
+            <!-- PDF Container dengan Custom Scroll dan Scaling -->
+            <div class="w-full flex-grow overflow-y-auto doc-scroll flex justify-center items-start pt-20 pb-20 md:pt-0 pdf-wrapper-container relative z-10">
+                <div class="pdf-wrapper">
+                    
+                    <!-- KERTAS LAPORAN A4 (Lebar tetap 800px) -->
+                    <div id="proReportContent" class="bg-white w-[800px] min-h-[1131px] mx-auto shadow-2xl border border-slate-200 p-12 flex flex-col text-slate-800 font-sans shrink-0 relative overflow-hidden">
+                        
+                        <!-- Header Laporan -->
+                        <div class="flex justify-between items-start border-b-4 border-slate-800 pb-5 mb-8 relative z-10">
+                            <div class="flex items-center gap-4">
+                                <div class="bg-slate-800 text-white p-3.5 rounded-xl"><i class="fa-solid fa-hospital-user text-4xl"></i></div>
+                                <div>
+                                    <h1 class="text-4xl font-black text-slate-900 tracking-tighter">TENSIGUARD PRO</h1>
+                                    <p class="text-[11px] font-bold text-slate-500 tracking-widest uppercase mt-1">Sistem Manajemen Mutu Alat Kesehatan</p>
+                                </div>
+                            </div>
+                            <div class="text-right">
+                                <h2 class="text-2xl font-black text-slate-300 uppercase tracking-widest mb-1">Inventory Report</h2>
+                                <p class="text-sm font-bold text-slate-800">{{ currentDateString }}</p>
+                                <p class="text-xs text-slate-500 mt-1 font-mono">DOC: PRO-{{ Math.floor(Math.random() * 90000) + 10000 }}</p>
+                            </div>
+                        </div>
+
+                        <!-- Ringkasan Statistik -->
+                        <div class="grid grid-cols-4 gap-4 mb-8">
+                            <div class="bg-slate-50 p-4 rounded-xl border border-slate-200">
+                                <p class="text-[10px] text-slate-500 font-bold uppercase mb-1">Total Alat</p>
+                                <p class="text-2xl font-black text-slate-900">{{ proDevices.length }}</p>
+                            </div>
+                            <div class="bg-green-50/50 p-4 rounded-xl border border-green-100">
+                                <p class="text-[10px] text-green-700 font-bold uppercase mb-1">Kalibrasi Valid</p>
+                                <p class="text-2xl font-black text-green-800">{{ proDevices.filter(d => d.status === 'Valid').length }}</p>
+                            </div>
+                            <div class="bg-yellow-50/50 p-4 rounded-xl border border-yellow-100">
+                                <p class="text-[10px] text-yellow-700 font-bold uppercase mb-1">Due Soon</p>
+                                <p class="text-2xl font-black text-yellow-800">{{ proDevices.filter(d => d.status === 'Due Soon').length }}</p>
+                            </div>
+                            <div class="bg-red-50/50 p-4 rounded-xl border border-red-100">
+                                <p class="text-[10px] text-red-700 font-bold uppercase mb-1">Unverified (Expired)</p>
+                                <p class="text-2xl font-black text-red-800">{{ proDevices.filter(d => d.status === 'Unverified').length }}</p>
+                            </div>
+                        </div>
+
+                        <h3 class="text-xs font-black text-slate-800 uppercase tracking-widest mb-3 border-b-2 border-slate-800 pb-2"><i class="fa-solid fa-list-check mr-1"></i> Detail Inventaris Tensimeter</h3>
+                        
+                        <!-- Tabel Alat (PDF Ready) -->
+                        <div class="mb-auto">
+                            <table class="w-full text-left text-sm text-slate-700 border-collapse">
+                                <thead>
+                                    <tr class="bg-slate-100 text-[10px] font-bold text-slate-500 uppercase tracking-wider border-b-2 border-slate-300">
+                                        <th class="py-3 px-4">No.</th>
+                                        <th class="py-3 px-4">ID Alat & Model</th>
+                                        <th class="py-3 px-4">Lokasi Ruangan</th>
+                                        <th class="py-3 px-4 text-center">Expired Date</th>
+                                        <th class="py-3 px-4 text-center">Status</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr v-for="(dev, index) in proDevices" :key="dev.id" class="border-b border-slate-200">
+                                        <td class="py-4 px-4 font-bold">{{ index + 1 }}</td>
+                                        <td class="py-4 px-4">
+                                            <p class="font-bold text-slate-900">{{ dev.id }}</p>
+                                            <p class="text-xs text-slate-500">{{ dev.model }}</p>
+                                        </td>
+                                        <td class="py-4 px-4 font-medium">{{ dev.location }}</td>
+                                        <td class="py-4 px-4 text-center font-medium">{{ dev.expDate }}</td>
+                                        <td class="py-4 px-4 text-center">
+                                            <span v-if="dev.status === 'Valid'" class="text-green-600 font-bold text-xs uppercase tracking-wider">Valid</span>
+                                            <span v-else-if="dev.status === 'Unverified'" class="text-red-600 font-bold text-xs uppercase tracking-wider">Unverified</span>
+                                            <span v-else-if="dev.status === 'Due Soon'" class="text-yellow-600 font-bold text-xs uppercase tracking-wider">Due Soon</span>
+                                        </td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+
+                        <!-- Footer -->
+                        <div class="mt-12 pt-6 border-t border-slate-300 flex justify-between items-end relative z-10">
+                            <div class="text-[10px] text-slate-500 w-[60%] pr-8 text-justify leading-relaxed">
+                                Dokumen ini merupakan laporan inventaris alat medis dari TensiGuard PRO System. Harap lakukan verifikasi silang fisik untuk perangkat berstatus "Unverified" (telah kedaluwarsa) dan lakukan penjadwalan kalibrasi ke badan meteorologi terkait.
+                            </div>
+                            <div class="w-[40%] flex flex-col items-center text-center">
+                                <p class="text-xs font-bold text-slate-800 mb-12">Disetujui Oleh,</p>
+                                <div class="w-32 border-b border-slate-400 mb-2"></div>
+                                <p class="text-[10px] font-bold text-slate-500 uppercase tracking-widest">Facility Manager</p>
+                            </div>
+                        </div>
+
+                    </div>
+                </div>
+            </div>
+        </div>
+
         <!-- Tambah Alat Modal -->
         <div v-if="showAddDeviceModal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4 md:p-6 slide-up-enter-active">
             <div class="bg-white w-full max-w-md rounded-3xl shadow-2xl overflow-hidden flex flex-col">
@@ -1299,6 +1413,7 @@
                     symptoms: { chestPain: false, shortnessBreath: false, vision: false, speech: false, weakness: false, confusion: false },
                     currentRead: { sys: null, dia: null, pulse: null },
                     showReport: false,
+                    showProReport: false,
                     isDownloading: false,
                     chartInstance: null,
                     showGuide: false,
@@ -1439,19 +1554,24 @@
                         reader.readAsDataURL(file);
                     }
                 },
-                exportCSV() {
-                    let csvContent = "data:text/csv;charset=utf-8,";
-                    csvContent += "ID Alat,Merek & Model,Lokasi Ruangan,Masa Berlaku,Status Kalibrasi\n";
-                    this.proDevices.forEach(dev => {
-                        csvContent += `"${dev.id}","${dev.model}","${dev.location}","${dev.expDate}","${dev.status}"\n`;
+                downloadProPDF() {
+                    this.isDownloading = true;
+                    const element = document.getElementById('proReportContent');
+                    
+                    const opt = {
+                        margin:       0,
+                        filename:     `TensiGuard_Pro_Inventory_${new Date().toISOString().slice(0,10)}.pdf`,
+                        image:        { type: 'jpeg', quality: 1.0 },
+                        html2canvas:  { scale: 2, useCORS: true, windowWidth: 800, logging: false },
+                        jsPDF:        { unit: 'px', format: [800, 1131], orientation: 'portrait' }
+                    };
+
+                    html2pdf().set(opt).from(element).save().then(() => {
+                        this.isDownloading = false;
+                    }).catch(err => {
+                        console.error("Gagal membuat PDF: ", err);
+                        this.isDownloading = false;
                     });
-                    const encodedUri = encodeURI(csvContent);
-                    const link = document.createElement("a");
-                    link.setAttribute("href", encodedUri);
-                    link.setAttribute("download", "TensiGuard_Devices_Export.csv");
-                    document.body.appendChild(link);
-                    link.click();
-                    document.body.removeChild(link);
                 },
                 addDevice() {
                     if(!this.newDevice.id || !this.newDevice.model) return;

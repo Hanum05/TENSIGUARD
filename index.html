@@ -137,20 +137,26 @@
                     </div>
 
                     <!-- Smart Reminders -->
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <div class="bg-gradient-to-r from-blue-600 to-indigo-600 rounded-2xl p-5 text-white shadow-md flex items-center gap-4 relative overflow-hidden">
-                            <i class="fa-solid fa-bell text-3xl opacity-20 absolute right-4 bottom-4"></i>
-                            <div class="bg-white/20 p-3 rounded-full"><i class="fa-solid fa-stethoscope"></i></div>
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                        <div class="bg-gradient-to-r from-blue-600 to-indigo-600 rounded-2xl p-4 text-white shadow-md flex items-start gap-3 relative overflow-hidden">
+                            <div class="bg-white/20 p-2 rounded-full mt-1"><i class="fa-solid fa-droplet text-sm"></i></div>
                             <div>
-                                <h3 class="font-semibold text-lg">Waktu Pengukuran</h3>
-                                <p class="text-blue-100 text-sm">Jadwal pengukuran rutin Anda hari ini.</p>
+                                <h3 class="font-bold text-sm">Measurement Reminder</h3>
+                                <p class="text-blue-100 text-xs mt-1">Saatnya mengukur tekanan darah rutin Anda.</p>
                             </div>
                         </div>
-                        <div class="bg-white border border-orange-200 rounded-2xl p-5 shadow-sm flex items-center gap-4">
-                            <div class="bg-orange-100 text-orange-600 p-3 rounded-full"><i class="fa-solid fa-screwdriver-wrench"></i></div>
+                        <div class="bg-white border border-orange-200 rounded-2xl p-4 shadow-sm flex items-start gap-3">
+                            <div class="bg-orange-100 text-orange-600 p-2 rounded-full mt-1"><i class="fa-solid fa-screwdriver-wrench text-sm"></i></div>
                             <div>
-                                <h3 class="font-semibold text-slate-800">Calibra-Guard Alert</h3>
-                                <p class="text-slate-500 text-sm">Alat (TG-0248) mendekati jadwal kalibrasi (2 bulan lagi).</p>
+                                <h3 class="font-bold text-slate-800 text-sm">Calibration Reminder</h3>
+                                <p class="text-slate-500 text-xs mt-1">Perangkat TG-0248 mendekati jadwal kalibrasi.</p>
+                            </div>
+                        </div>
+                        <div class="bg-white border border-green-200 rounded-2xl p-4 shadow-sm flex items-start gap-3">
+                            <div class="bg-green-100 text-green-600 p-2 rounded-full mt-1"><i class="fa-solid fa-user-doctor text-sm"></i></div>
+                            <div>
+                                <h3 class="font-bold text-slate-800 text-sm">Follow-Up Reminder</h3>
+                                <p class="text-slate-500 text-xs mt-1">Jadwal tindak lanjut Anda sudah tiba.</p>
                             </div>
                         </div>
                     </div>
@@ -296,12 +302,12 @@
                                     <i :class="['fa-solid mt-0.5 text-lg', selectedDevice.status === 'valid' ? 'fa-shield-check text-green-600' : 'fa-triangle-exclamation text-red-600']"></i>
                                     <div>
                                         <h4 :class="['font-bold text-sm', selectedDevice.status === 'valid' ? 'text-green-800' : 'text-red-800']">
-                                            Keandalan Pengukuran: {{ selectedDevice.status === 'valid' ? 'TINGGI' : 'RENDAH' }}
+                                            Device Reliability: {{ selectedDevice.status === 'valid' ? '🟢 Verified' : '🔴 Verify Device' }}
                                         </h4>
-                                        <p :class="['text-xs mt-1', selectedDevice.status === 'valid' ? 'text-green-700' : 'text-red-700']">
+                                        <p :class="['text-xs mt-1 font-medium', selectedDevice.status === 'valid' ? 'text-green-700' : 'text-red-700']">
                                             {{ selectedDevice.status === 'valid' 
-                                                ? 'Alat yang digunakan terkalibrasi. Hasil dapat diandalkan untuk skrining.' 
-                                                : 'Peringatan: Alat ini belum dikalibrasi. Pengukuran mungkin tidak akurat dan harus dikonfirmasi ulang dengan alat terstandar.' }}
+                                                ? 'Measurement Confidence: HIGH' 
+                                                : '⚠️ Measurement should be confirmed after device verification.' }}
                                         </p>
                                     </div>
                                 </div>
@@ -309,42 +315,89 @@
                         </div>
 
                         <!-- Re-Measure Guide Logic -->
-                        <div v-if="needsRemeasure" class="bg-orange-50 border-2 border-orange-200 rounded-2xl p-6 text-center shadow-sm">
-                            <div class="w-16 h-16 bg-orange-100 text-orange-500 rounded-full flex items-center justify-center mx-auto mb-4 text-2xl">
-                                <i class="fa-solid fa-rotate-right"></i>
+                        <div v-if="needsRemeasure" class="bg-white border-2 border-orange-200 rounded-2xl overflow-hidden shadow-sm">
+                            <div class="bg-orange-50 p-6 text-center border-b border-orange-100">
+                                <div class="w-16 h-16 bg-orange-100 text-orange-500 rounded-full flex items-center justify-center mx-auto mb-4 text-2xl">
+                                    <i class="fa-solid fa-rotate-right"></i>
+                                </div>
+                                <h3 class="text-xl font-bold text-orange-800 mb-2">🔄 Smart Measurement Verification</h3>
+                                <p class="text-orange-700 text-sm">Hasil terdeteksi tinggi atau meragukan. TENSIGUARD mengarahkan Anda melakukan pengukuran ulang.</p>
                             </div>
-                            <h3 class="text-xl font-bold text-orange-800 mb-2">🔄 Re-Measure Guide</h3>
-                            <p class="text-orange-700 text-sm mb-4">Hasil terdeteksi tinggi ({{currentRead.sys}}/{{currentRead.dia}}). Untuk akurasi skrining, mohon lakukan pengukuran ulang.</p>
-                            <ul class="text-sm text-orange-800 text-left bg-white p-4 rounded-xl border border-orange-100 inline-block mb-6 space-y-2">
-                                <li><i class="fa-solid fa-check text-green-500 mr-2"></i> Duduk santai selama 3-5 menit.</li>
-                                <li><i class="fa-solid fa-check text-green-500 mr-2"></i> Kaki menapak di lantai, tidak menyilang.</li>
-                                <li><i class="fa-solid fa-check text-green-500 mr-2"></i> Lengan setinggi jantung.</li>
-                            </ul>
-                            <div>
-                                <button @click="executeRemeasure" class="bg-orange-500 text-white px-6 py-2 rounded-xl font-bold shadow-md hover:bg-orange-600">Simulasi Ukur Ulang AI</button>
+                            <div class="p-6 grid grid-cols-1 md:grid-cols-2 gap-6">
+                                <div>
+                                    <h4 class="font-bold text-slate-700 mb-3 text-sm uppercase">Panduan Ukur Ulang:</h4>
+                                    <ol class="text-sm text-slate-600 space-y-3 list-decimal pl-4">
+                                        <li>Duduk dengan tenang.</li>
+                                        <li>Pastikan posisi tubuh benar (kaki menapak di lantai, tidak menyilang).</li>
+                                        <li>Pastikan manset terpasang tepat (lengan setinggi jantung).</li>
+                                        <li>Tunggu 3-5 menit sesuai panduan.</li>
+                                        <li>Ukur kembali.</li>
+                                    </ol>
+                                </div>
+                                <div class="bg-slate-50 p-4 rounded-xl border border-slate-200">
+                                    <h4 class="font-bold text-slate-700 mb-3 text-sm uppercase">Riwayat Pengukuran:</h4>
+                                    <div class="space-y-2 mb-4">
+                                        <!-- Pengukuran Pertama -->
+                                        <div class="flex justify-between items-center text-sm">
+                                            <span class="text-slate-500">Measurement 1:</span>
+                                            <span class="font-bold text-slate-800">160/100 mmHg</span>
+                                        </div>
+                                        <!-- Pengukuran Lanjutan (Loop) -->
+                                        <div v-for="(m, i) in measureHistory" :key="i" class="flex justify-between items-center text-sm">
+                                            <span class="text-slate-500">Measurement {{ i + 2 }}:</span>
+                                            <span class="font-bold text-slate-800">{{ m.sys }}/{{ m.dia }} mmHg</span>
+                                        </div>
+                                    </div>
+                                    <div v-if="measureHistory.length >= 2" class="bg-red-100 text-red-700 p-2 rounded text-center text-sm font-bold animate-pulse">
+                                        🔴 Persistent High Reading
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="p-4 bg-orange-50 text-center border-t border-orange-100">
+                                <button v-if="measureHistory.length < 2" @click="executeRemeasure" class="bg-orange-500 text-white px-6 py-2 rounded-xl font-bold shadow-md hover:bg-orange-600">Simulasi Ukur Kembali (AI)</button>
+                                <button v-else @click="needsRemeasure = false" class="bg-primary text-white px-6 py-2 rounded-xl font-bold shadow-md hover:bg-blue-600">Lanjutkan Analisis AI</button>
                             </div>
                         </div>
 
                         <!-- Final Diagnosis Result (Appears when valid) -->
                         <div v-if="!needsRemeasure" class="space-y-6 slide-up-enter-active">
                             
-                            <!-- Safety Alert -->
-                            <div v-if="diagnosisResult.urgency === 'urgent'" class="bg-red-600 text-white rounded-2xl p-6 shadow-lg border-4 border-red-200 animate-pulse">
-                                <div class="flex items-start gap-4">
-                                    <i class="fa-solid fa-triangle-exclamation text-4xl mt-1"></i>
+                            <!-- Safety Alert: Patient Safety Engine -->
+                            <div v-if="diagnosisResult.urgency === 'urgent'" class="bg-red-50 text-slate-800 rounded-2xl p-6 shadow-md border-2 border-red-300">
+                                <div class="flex items-start gap-4 mb-4">
+                                    <div class="bg-red-100 p-3 rounded-full text-red-600"><i class="fa-solid fa-truck-medical text-2xl"></i></div>
                                     <div>
-                                        <h3 class="text-2xl font-black mb-2">🚨 SAFETY ALERT: URGENT MEDICAL ATTENTION</h3>
-                                        <p class="font-medium mb-4">Tekanan darah Anda sangat tinggi (Krisis Hipertensi). Jangan menunggu aplikasi memberikan diagnosis lebih lanjut.</p>
-                                        <div class="bg-red-800/50 p-4 rounded-xl">
-                                            <p class="text-sm font-bold mb-2">Apakah Anda mengalami salah satu gejala ini?</p>
-                                            <ul class="text-sm space-y-1">
-                                                <li>• Nyeri dada berat / Sesak napas</li>
-                                                <li>• Gangguan penglihatan / bicara</li>
-                                                <li>• Kelemahan / kebas mendadak</li>
-                                            </ul>
-                                            <button class="mt-4 bg-white text-red-700 font-bold px-4 py-2 rounded-lg w-full">HUBUNGI IGD / AMBULANS</button>
-                                        </div>
+                                        <h3 class="text-xl font-black text-red-700">🚨 Patient Safety Engine</h3>
+                                        <p class="text-sm font-medium text-slate-600 mt-1">Tekanan darah Anda sangat tinggi. Sistem perlu melakukan pengecekan gejala darurat.</p>
                                     </div>
+                                </div>
+                                <div class="bg-white p-4 rounded-xl border border-red-100 mb-4">
+                                    <p class="font-bold mb-3 text-sm">Apakah Anda mengalami salah satu gejala ini?</p>
+                                    <div class="grid grid-cols-1 md:grid-cols-2 gap-3 text-sm">
+                                        <label class="flex items-center gap-2 cursor-pointer p-2 hover:bg-slate-50 rounded border border-transparent hover:border-slate-200 transition">
+                                            <input type="checkbox" v-model="symptoms.chestPain" class="w-4 h-4 text-red-600 rounded"> ❤️ Nyeri dada
+                                        </label>
+                                        <label class="flex items-center gap-2 cursor-pointer p-2 hover:bg-slate-50 rounded border border-transparent hover:border-slate-200 transition">
+                                            <input type="checkbox" v-model="symptoms.shortnessBreath" class="w-4 h-4 text-red-600 rounded"> 🫁 Sesak napas
+                                        </label>
+                                        <label class="flex items-center gap-2 cursor-pointer p-2 hover:bg-slate-50 rounded border border-transparent hover:border-slate-200 transition">
+                                            <input type="checkbox" v-model="symptoms.vision" class="w-4 h-4 text-red-600 rounded"> 👁️ Gangguan penglihatan
+                                        </label>
+                                        <label class="flex items-center gap-2 cursor-pointer p-2 hover:bg-slate-50 rounded border border-transparent hover:border-slate-200 transition">
+                                            <input type="checkbox" v-model="symptoms.speech" class="w-4 h-4 text-red-600 rounded"> 🧠 Gangguan bicara
+                                        </label>
+                                        <label class="flex items-center gap-2 cursor-pointer p-2 hover:bg-slate-50 rounded border border-transparent hover:border-slate-200 transition">
+                                            <input type="checkbox" v-model="symptoms.weakness" class="w-4 h-4 text-red-600 rounded"> 💪 Kelemahan/kebas mendadak
+                                        </label>
+                                        <label class="flex items-center gap-2 cursor-pointer p-2 hover:bg-slate-50 rounded border border-transparent hover:border-slate-200 transition">
+                                            <input type="checkbox" v-model="symptoms.confusion" class="w-4 h-4 text-red-600 rounded"> ⚠️ Kebingungan berat
+                                        </label>
+                                    </div>
+                                </div>
+                                <div v-if="hasCriticalSymptoms" class="bg-red-600 text-white p-4 rounded-xl text-center shadow-lg animate-pulse">
+                                    <h4 class="font-black text-xl mb-1">🚨 URGENT MEDICAL ATTENTION</h4>
+                                    <p class="text-sm mb-3">Jangan menunggu aplikasi memberikan diagnosis. Segera cari pertolongan medis!</p>
+                                    <button class="bg-white text-red-700 font-bold px-6 py-2 rounded-lg shadow hover:bg-slate-100 transition w-full md:w-auto">HUBUNGI IGD / AMBULANS</button>
                                 </div>
                             </div>
 
@@ -364,32 +417,39 @@
 
                                 <!-- Tensi-Screen Category -->
                                 <div class="bg-white rounded-2xl shadow-sm border border-slate-100 p-6 flex flex-col justify-center">
-                                    <h3 class="font-bold text-slate-500 uppercase tracking-wider text-xs mb-2">🩸 TENSI-SCREEN</h3>
-                                    <h2 class="text-2xl font-bold text-slate-800">{{ diagnosisResult.screenCategory }}</h2>
-                                    <p class="text-sm text-slate-600 mt-2">Ini adalah skrining awal berdasarkan klasifikasi standar, bukan diagnosis medis final.</p>
+                                    <h3 class="font-bold text-slate-500 uppercase tracking-wider text-xs mb-2">🩸 EARLY HYPERTENSION SCREENING</h3>
+                                    <div class="mb-4">
+                                        <p class="text-sm text-slate-500 font-medium">Blood Pressure</p>
+                                        <p class="text-2xl font-black text-slate-800">{{ currentRead.sys }}/{{ currentRead.dia }} mmHg</p>
+                                    </div>
+                                    <h2 :class="['text-xl font-bold mb-2', diagnosisResult.screenColorText]">{{ diagnosisResult.screenIcon }} {{ diagnosisResult.screenCategory }}</h2>
+                                    <p class="text-sm text-slate-600 bg-slate-50 p-3 rounded-lg border border-slate-200">
+                                        "{{ diagnosisResult.screenMessage }}"
+                                    </p>
+                                    <p class="text-[10px] text-slate-400 mt-3 text-right italic">*Catatan: Ini skrining, bukan diagnosis final.</p>
                                 </div>
                             </div>
 
                             <!-- Explainable AI -->
                             <div class="bg-white rounded-2xl shadow-sm border border-slate-100 p-6">
-                                <h3 class="font-bold text-slate-800 mb-4"><i class="fa-solid fa-magnifying-glass-chart text-primary mr-2"></i> EXPLAINABLE AI: Mengapa Skor {{ diagnosisResult.score }}?</h3>
-                                <div class="space-y-3">
-                                    <div class="flex items-center gap-3" v-for="(reason, index) in diagnosisResult.reasons" :key="index">
-                                        <i :class="['fa-solid fa-circle text-[10px]', reason.type === 'danger' ? 'text-red-500' : reason.type === 'warning' ? 'text-orange-500' : 'text-green-500']"></i>
-                                        <p class="text-sm text-slate-700">
-                                            <span class="font-semibold">{{ reason.title }}:</span> {{ reason.desc }}
-                                        </p>
+                                <h3 class="font-bold text-slate-800 mb-4"><i class="fa-solid fa-magnifying-glass-chart text-primary mr-2"></i> EXPLAINABLE AI: Why Score {{ diagnosisResult.score }}?</h3>
+                                <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                                    <div class="flex items-center justify-between p-3 bg-slate-50 rounded-lg border border-slate-100" v-for="(reason, index) in diagnosisResult.reasons" :key="index">
+                                        <span class="text-sm text-slate-600">{{ reason.title }}:</span>
+                                        <span class="text-sm font-bold" v-html="reason.desc"></span>
                                     </div>
                                 </div>
-                                <div class="mt-4 p-3 bg-blue-50 text-blue-800 text-sm rounded-lg border border-blue-100">
-                                    <strong>Kesimpulan AI:</strong> {{ diagnosisResult.summary }}
+                                <div class="p-3 bg-blue-50 text-blue-800 text-sm rounded-lg border border-blue-100">
+                                    <p><strong>Ringkasan AI:</strong> "{{ diagnosisResult.summary }}"</p>
                                 </div>
                             </div>
 
                             <!-- Tensi-Care Action -->
                             <div class="bg-slate-800 rounded-2xl shadow-sm p-6 text-white">
-                                <h3 class="font-bold mb-4 text-blue-300"><i class="fa-solid fa-hand-holding-medical mr-2"></i> TENSI-CARE: Tindakan yang Disarankan</h3>
-                                <p class="text-lg font-medium leading-relaxed mb-6">{{ diagnosisResult.careAction }}</p>
+                                <h3 class="font-bold mb-4 text-blue-300"><i class="fa-solid fa-hand-holding-medical mr-2"></i> TENSI-CARE: Personalized Health Action</h3>
+                                <p class="text-lg font-medium leading-relaxed mb-6 bg-slate-700/50 p-4 rounded-xl border border-slate-600 shadow-inner">
+                                    "{{ diagnosisResult.careAction }}"
+                                </p>
                                 
                                 <div class="flex gap-4">
                                     <button @click="generateReport" class="flex-1 bg-primary hover:bg-blue-600 transition text-white px-4 py-3 rounded-xl font-bold text-sm text-center">
@@ -424,11 +484,27 @@
                             <canvas id="trendChart"></canvas>
                         </div>
                         
-                        <div class="mt-6 p-4 bg-orange-50 border border-orange-100 rounded-xl flex items-start gap-3">
-                            <i class="fa-solid fa-arrow-trend-up text-orange-500 mt-1"></i>
-                            <div>
-                                <h4 class="font-bold text-orange-800 text-sm">AI Trend Analysis</h4>
-                                <p class="text-orange-700 text-sm mt-1">Sistem mendeteksi <strong>Tren Meningkat (Increasing Trend)</strong> pada tekanan sistolik Anda selama 2 minggu terakhir. Disarankan untuk memantau asupan natrium dan berkonsultasi.</p>
+                        <div class="mt-6 grid grid-cols-1 md:grid-cols-3 gap-4">
+                            <div class="p-4 bg-orange-50 border border-orange-200 rounded-xl flex items-start gap-3">
+                                <i class="fa-solid fa-arrow-trend-up text-orange-500 mt-1"></i>
+                                <div>
+                                    <h4 class="font-bold text-orange-800 text-sm">AI Trend Analysis</h4>
+                                    <p class="text-orange-700 text-xs mt-1">Sistem mendeteksi <strong>📈 Increasing Trend</strong>. Tekanan darah cenderung meningkat.</p>
+                                </div>
+                            </div>
+                            <div class="p-4 bg-red-50 border border-red-200 rounded-xl flex items-start gap-3 opacity-50 grayscale">
+                                <i class="fa-solid fa-triangle-exclamation text-red-500 mt-1"></i>
+                                <div>
+                                    <h4 class="font-bold text-red-800 text-sm">Persistent High</h4>
+                                    <p class="text-red-700 text-xs mt-1">⚠️ Hasil tinggi muncul berulang. (Tidak terdeteksi pada periode ini)</p>
+                                </div>
+                            </div>
+                            <div class="p-4 bg-green-50 border border-green-200 rounded-xl flex items-start gap-3 opacity-50 grayscale">
+                                <i class="fa-solid fa-arrow-trend-down text-green-500 mt-1"></i>
+                                <div>
+                                    <h4 class="font-bold text-green-800 text-sm">Improving Trend</h4>
+                                    <p class="text-green-700 text-xs mt-1">📉 Tekanan darah menunjukkan perbaikan. (Tidak terdeteksi pada periode ini)</p>
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -444,23 +520,28 @@
                         </div>
                     </div>
 
-                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
                         <div class="bg-white p-5 rounded-xl border border-slate-200 shadow-sm flex items-center justify-between">
                             <div>
-                                <p class="text-sm text-slate-500 font-medium">Total Perangkat</p>
+                                <p class="text-xs text-slate-500 font-medium">TOTAL DEVICES</p>
                                 <h3 class="text-3xl font-black text-slate-800">128</h3>
                             </div>
-                            <div class="w-12 h-12 rounded-full bg-blue-50 text-primary flex items-center justify-center text-xl"><i class="fa-solid fa-box"></i></div>
                         </div>
                         <div class="bg-white p-5 rounded-xl border border-slate-200 shadow-sm flex items-center justify-between">
                             <div>
-                                <p class="text-sm text-slate-500 font-medium">Kalibrasi Valid <i class="fa-solid fa-circle-check text-green-500 ml-1"></i></p>
+                                <p class="text-xs text-slate-500 font-medium">Verified <i class="fa-solid fa-circle-check text-green-500 ml-1"></i></p>
                                 <h3 class="text-3xl font-black text-slate-800">101</h3>
+                            </div>
+                        </div>
+                        <div class="bg-yellow-50 p-5 rounded-xl border border-yellow-200 shadow-sm flex items-center justify-between">
+                            <div>
+                                <p class="text-xs text-yellow-700 font-medium">Due Soon <i class="fa-solid fa-clock text-yellow-600 ml-1"></i></p>
+                                <h3 class="text-3xl font-black text-yellow-800">19</h3>
                             </div>
                         </div>
                         <div class="bg-red-50 p-5 rounded-xl border border-red-200 shadow-sm flex items-center justify-between">
                             <div>
-                                <p class="text-sm text-red-600 font-medium">Perlu Verifikasi <i class="fa-solid fa-triangle-exclamation text-red-500 ml-1"></i></p>
+                                <p class="text-xs text-red-600 font-medium">Need Verification <i class="fa-solid fa-triangle-exclamation text-red-500 ml-1"></i></p>
                                 <h3 class="text-3xl font-black text-red-700">8</h3>
                             </div>
                         </div>
@@ -545,16 +626,18 @@
                     </div>
                     <p><strong>Patient:</strong> {{ user.name }} ({{ user.age }}y, {{ calculatedBMI }} BMI)</p>
                     <p><strong>History:</strong> {{ user.historyHT ? 'HT(+)' : 'HT(-)' }}, Fam: {{ user.familyHT ? 'HT(+)' : 'HT(-)' }}</p>
-                    <div class="my-4 border-l-4 border-primary pl-3">
+                    <div class="my-4 border-l-4 border-primary pl-3 bg-white p-2">
                         <p class="text-2xl font-black text-slate-800">{{ currentRead.sys }} / {{ currentRead.dia }} mmHg</p>
                         <p>Pulse: {{ currentRead.pulse }} bpm</p>
+                        <p v-if="measureHistory.length > 0" class="text-xs text-slate-500 mt-1">Confirmed with {{ measureHistory.length + 1 }} measurements.</p>
                     </div>
                     <p><strong>Device ID:</strong> {{ selectedDevice.id }} ({{ selectedDevice.status.toUpperCase() }})</p>
+                    <p><strong>BP Trend:</strong> Increasing 🟠</p>
                     <p><strong>Tensi-Screen:</strong> {{ diagnosisResult.screenCategory }}</p>
                     <p><strong>Risk Score:</strong> {{ diagnosisResult.score }}/100 ({{ diagnosisResult.statusLabel }})</p>
                     <div class="mt-4 p-3 bg-white border border-slate-200 rounded">
                         <p class="font-bold text-xs mb-1">AI Recommendation:</p>
-                        <p class="text-xs">{{ diagnosisResult.careAction }}</p>
+                        <p class="text-xs">"{{ diagnosisResult.careAction }}"</p>
                     </div>
                     <div class="mt-6 text-center text-xs text-slate-400">
                         <p>Scan QR for digital verification</p>
@@ -592,12 +675,17 @@
                     measureStep: 1,
                     isScanning: false,
                     needsRemeasure: false,
+                    measureHistory: [],
+                    symptoms: { chestPain: false, shortnessBreath: false, vision: false, speech: false, weakness: false, confusion: false },
                     currentRead: { sys: null, dia: null, pulse: null },
                     showReport: false,
                     chartInstance: null
                 }
             },
             computed: {
+                hasCriticalSymptoms() {
+                    return Object.values(this.symptoms).some(val => val === true);
+                },
                 calculatedBMI() {
                     if(!this.user.height || !this.user.weight) return 0;
                     const h = this.user.height / 100;
@@ -616,68 +704,91 @@
                     let sys = this.currentRead.sys || 120;
                     let dia = this.currentRead.dia || 80;
                     
-                    let screenCategory = "Normal";
+                    let screenCategory = "NORMAL";
+                    let screenMessage = "Tekanan darah Anda dalam batas normal.";
+                    let screenIcon = "🟢";
+                    let screenColorText = "text-green-600";
                     let urgency = "normal";
                     let reasons = [];
 
-                    // 1. Hitung BP Category (JNC 8 / ACC AHA simplifikasi)
+                    // Base Score Calculation (0-75)
                     if (sys >= 180 || dia >= 120) {
-                        score += 90; screenCategory = "Krisis Hipertensi"; urgency = "urgent";
-                        reasons.push({title: 'Sistolik/Diastolik Sangat Tinggi', desc: `Angka ${sys}/${dia} masuk kategori kritis darurat.`, type: 'danger'});
-                    } else if (sys >= 160 || dia >= 100) {
-                        score += 70; screenCategory = "Hipertensi Derajat 2";
-                        reasons.push({title: 'Tekanan Darah Tinggi', desc: `Berada pada level Hipertensi Derajat 2.`, type: 'danger'});
+                        score += 75; screenCategory = "HIGH BLOOD PRESSURE (Krisis)"; urgency = "urgent";
+                        screenIcon = "🔴"; screenColorText = "text-red-700";
+                        screenMessage = "Hasil skrining menunjukkan tekanan darah sangat tinggi. Jangan menunggu, segera cari pertolongan medis.";
+                        reasons.push({title: 'Systolic', desc: `${sys} 🔴`});
+                        reasons.push({title: 'Diastolic', desc: `${dia} 🔴`});
                     } else if (sys >= 140 || dia >= 90) {
-                        score += 50; screenCategory = "Hipertensi Derajat 1";
-                        reasons.push({title: 'Tekanan Darah Meningkat', desc: `Melewati batas normal atas (Hipertensi Derajat 1).`, type: 'warning'});
+                        score += 55; screenCategory = "HIGH BLOOD PRESSURE";
+                        screenIcon = "🔴"; screenColorText = "text-red-600";
+                        screenMessage = "Hasil skrining menunjukkan tekanan darah tinggi. Lakukan pengukuran ulang dan konsultasikan kepada tenaga kesehatan apabila hasil tetap tinggi.";
+                        reasons.push({title: 'Systolic', desc: `${sys} 🔴`});
+                        reasons.push({title: 'Diastolic', desc: `${dia} 🔴`});
                     } else if (sys >= 120 || dia >= 80) {
-                        score += 30; screenCategory = "Prahipertensi / Elevated";
-                        reasons.push({title: 'Tekanan Darah Sedikit Naik', desc: `Berada di ambang batas kewaspadaan.`, type: 'warning'});
+                        score += 30; screenCategory = "ELEVATED";
+                        screenIcon = "🟡"; screenColorText = "text-yellow-600";
+                        screenMessage = "Hasil skrining menunjukkan tekanan darah mulai meningkat. Pantau gaya hidup Anda.";
+                        reasons.push({title: 'Systolic', desc: `${sys} 🟡`});
+                        reasons.push({title: 'Diastolic', desc: `${dia} 🟢`});
                     } else {
-                        score += 10; screenCategory = "Normal";
-                        reasons.push({title: 'Tekanan Darah Ideal', desc: `Sistolik dan diastolik dalam batas sehat.`, type: 'success'});
+                        score += 10; screenCategory = "NORMAL";
+                        screenIcon = "🟢"; screenColorText = "text-green-600";
+                        reasons.push({title: 'Systolic', desc: `${sys} 🟢`});
+                        reasons.push({title: 'Diastolic', desc: `${dia} 🟢`});
                     }
 
-                    // 2. Personal Context Modifier
-                    if(this.user.age > 50) { score += 10; reasons.push({title: 'Faktor Usia', desc: 'Risiko meningkat pada usia di atas 50 tahun.', type: 'warning'}); }
-                    if(this.calculatedBMI > 25) { score += 10; reasons.push({title: 'Faktor BMI', desc: 'Overweight/Obesitas membebani kerja jantung.', type: 'warning'}); }
-                    if(this.user.historyHT) { score += 15; reasons.push({title: 'Riwayat Hipertensi', desc: 'Terdata memiliki riwayat sebelumnya.', type: 'danger'}); }
-                    if(this.user.familyHT) { score += 5; reasons.push({title: 'Genetik', desc: 'Ada riwayat keturunan.', type: 'warning'}); }
+                    // Explainable AI additions: Repeated Readings
+                    if (this.measureHistory.length >= 2) {
+                        score += 15;
+                        reasons.push({title: 'Repeated Reading', desc: `3× High 🔴`}); // Termasuk measurement ke-1
+                    }
 
-                    // 3. Calibra-Guard Context
+                    // Trend Mock logic
+                    if (sys >= 140) {
+                        reasons.push({title: 'BP Trend', desc: `Increasing 🟠`});
+                        score += 5;
+                    }
+
+                    // Calibra-Guard Context
                     if(this.selectedDevice && this.selectedDevice.status !== 'valid') {
-                        reasons.push({title: 'Validasi Alat', desc: 'Skor ketidakpastian ditambah karena alat belum dikalibrasi.', type: 'warning'});
+                        reasons.push({title: 'Device Status', desc: `Verify Device 🔴`});
+                        score += 5;
                     } else {
-                        reasons.push({title: 'Validasi Alat', desc: 'Alat terkalibrasi, hasil dapat dipercaya.', type: 'success'});
+                        reasons.push({title: 'Device Status', desc: `Verified 🟢`});
                     }
 
                     score = Math.min(score, 100); // Max 100
 
-                    // Categorize Score
+                    // Categorize Score according to prompt mapping
                     let statusLabel, colorClass, careAction, summary;
-                    if (score < 20) {
-                        statusLabel = "🟢 Low Risk"; colorClass = "bg-gradient-to-br from-green-500 to-emerald-700";
+                    if (score <= 19) {
+                        statusLabel = "🟢 Low"; colorClass = "bg-gradient-to-br from-green-500 to-emerald-700";
                         careAction = "Pertahankan pola hidup sehat dan lakukan pemantauan berkala.";
-                        summary = "Tidak menunjukkan pola risiko tinggi. Teruskan kebiasaan baik Anda.";
-                    } else if (score < 40) {
+                        summary = "Tidak menunjukkan pola risiko tinggi saat skrining.";
+                    } else if (score <= 39) {
                         statusLabel = "🟡 Monitor"; colorClass = "bg-gradient-to-br from-yellow-400 to-orange-500";
-                        careAction = "Pantau tekanan darah secara konsisten (1x seminggu) dan perhatikan trennya.";
-                        summary = "Ada sedikit peningkatan risiko dari profil atau tekanan darah. Perlu observasi ringan.";
-                    } else if (score < 60) {
+                        careAction = "Pantau tekanan darah secara konsisten dan perhatikan trennya.";
+                        summary = "Perlu pemantauan.";
+                    } else if (score <= 59) {
                         statusLabel = "🟠 Attention"; colorClass = "bg-gradient-to-br from-orange-500 to-red-500";
-                        careAction = "Kurangi asupan garam, perbaiki pola tidur. Ulangi pengukuran dalam beberapa hari ke depan.";
-                        summary = "Faktor risiko cukup signifikan. Mulai perbaiki gaya hidup (Diet DASH).";
-                    } else if (score < 80) {
-                        statusLabel = "🔴 High Risk"; colorClass = "bg-gradient-to-br from-red-600 to-rose-800";
-                        careAction = "Konfirmasi hasil ini dengan tenaga kesehatan/dokter di puskesmas atau klinik terdekat.";
-                        summary = "Kombinasi tekanan darah tinggi dan faktor risiko personal memerlukan evaluasi medis preventif.";
+                        careAction = "Ulangi pengukuran dengan prosedur yang benar dan evaluasi apabila hasil tetap meningkat.";
+                        summary = "Perlu perhatian khusus terhadap gaya hidup.";
+                    } else if (score <= 79) {
+                        statusLabel = "🔴 High"; colorClass = "bg-gradient-to-br from-red-600 to-rose-800";
+                        careAction = "Konfirmasi hasil dan konsultasikan kepada tenaga kesehatan.";
+                        summary = "Perlu konfirmasi medis & evaluasi lebih lanjut.";
                     } else {
-                        statusLabel = "🚨 Urgent"; colorClass = "bg-gradient-to-br from-red-700 to-red-950";
-                        careAction = "Segera hubungi layanan medis darurat (IGD) jika disertai gejala nyeri dada, sesak, atau kelemahan.";
-                        summary = "Peringatan kritis! Indikator menunjukkan kondisi yang berpotensi membahayakan organ tubuh.";
+                        statusLabel = "🚨 Urgent"; colorClass = "bg-gradient-to-br from-red-800 to-red-950";
+                        careAction = "Seek Immediate Medical Attention. Jika Anda mengalami gejala mengkhawatirkan, cari bantuan medis segera.";
+                        summary = "Perlu perhatian segera! Risiko komplikasi tinggi.";
                     }
 
-                    return { score, statusLabel, colorClass, screenCategory, urgency, reasons, careAction, summary };
+                    // Override Explanation text for specific High trigger
+                    if (score > 60 && this.measureHistory.length >= 2 && sys >= 140) {
+                        summary = "Skor meningkat karena tekanan darah tinggi ditemukan secara berulang dan menunjukkan tren meningkat.";
+                    }
+
+                    return { score, statusLabel, colorClass, screenCategory, screenIcon, screenColorText, screenMessage, urgency, reasons, careAction, summary };
                 }
             },
             methods: {
@@ -685,6 +796,8 @@
                     this.measureStep = 1;
                     this.selectedDevice = null;
                     this.needsRemeasure = false;
+                    this.measureHistory = [];
+                    this.symptoms = { chestPain: false, shortnessBreath: false, vision: false, speech: false, weakness: false, confusion: false };
                     this.currentView = 'measure';
                 },
                 selectDevice(device) {
@@ -696,22 +809,30 @@
                     setTimeout(() => {
                         this.isScanning = false;
                         if(type === 'high') {
-                            this.currentRead = { sys: 165, dia: 102, pulse: 92 };
-                            // Trigger Re-measure guide jika hasil tinggi di pembacaan pertama
+                            this.currentRead = { sys: 160, dia: 100, pulse: 92 }; // Menyesuaikan prompt "160/100"
                             this.needsRemeasure = true; 
                         } else {
                             this.currentRead = { sys: 122, dia: 82, pulse: 75 };
                             this.needsRemeasure = false;
                         }
+                        this.measureHistory = [];
                         this.measureStep = 3;
                     }, 2000);
                 },
                 executeRemeasure() {
-                    // Simulasi hasil ukur ulang setelah istirahat (biasanya sedikit turun)
-                    this.currentRead.sys = this.currentRead.sys - 7;
-                    this.currentRead.dia = this.currentRead.dia - 3;
-                    this.currentRead.pulse = this.currentRead.pulse - 5;
-                    this.needsRemeasure = false; // Lanjut ke hasil akhir
+                    // Simpan history dari pembacaan AI pertama/sebelumnya ke array
+                    if(this.measureHistory.length === 0) {
+                        this.measureHistory.push({ sys: 157, dia: 98 }); // Measurement 2
+                        this.currentRead.sys = 157;
+                        this.currentRead.dia = 98;
+                    } else if (this.measureHistory.length === 1) {
+                        this.measureHistory.push({ sys: 158, dia: 99 }); // Measurement 3
+                        this.currentRead.sys = 158;
+                        this.currentRead.dia = 99;
+                    }
+                    
+                    // Mempertahankan Re-measure panel tetap terbuka sampai pengguna yang menutup secara manual,
+                    // sekaligus menampilkan alert "Persistent High Reading" secara dinamis di HTML.
                 },
                 generateReport() {
                     this.showReport = true;

@@ -35,6 +35,12 @@
         .fade-enter-from, .fade-leave-to { opacity: 0; }
         .slide-up-enter-active, .slide-up-leave-active { transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1); }
         .slide-up-enter-from, .slide-up-leave-to { transform: translateY(20px); opacity: 0; }
+        
+        /* Custom scrollbar untuk preview dokumen */
+        .doc-scroll::-webkit-scrollbar { width: 8px; height: 8px; }
+        .doc-scroll::-webkit-scrollbar-track { background: #e2e8f0; border-radius: 4px; }
+        .doc-scroll::-webkit-scrollbar-thumb { background: #94a3b8; border-radius: 4px; }
+        .doc-scroll::-webkit-scrollbar-thumb:hover { background: #64748b; }
     </style>
 </head>
 <body class="text-slate-800 antialiased">
@@ -257,7 +263,7 @@
                         </div>
                     </div>
 
-                    <!-- Step 2: AI Vision Simulator -->
+                    <!-- Step 2: AI Vision Simulator (Camera / Upload Option) -->
                     <div v-if="measureStep === 2" class="bg-white rounded-2xl shadow-sm border border-slate-100 p-6 slide-up-enter-active text-center">
                         <div v-if="!isScanning">
                             <!-- Toggle Mode -->
@@ -295,6 +301,7 @@
                                 </div>
                             </div>
 
+                            <!-- Simulasi Ekstraksi (Mengingat ini Front-end demo) -->
                             <div class="flex flex-col gap-3 justify-center max-w-md mx-auto mt-2 p-4 bg-blue-50 border border-blue-100 rounded-xl">
                                 <p class="text-sm text-blue-800 font-bold mb-1"><i class="fa-solid fa-wand-magic-sparkles mr-1"></i> Mulai Ekstraksi AI</p>
                                 <p class="text-xs text-blue-600 mb-2">Simulasi untuk demo: Pilih hasil yang ingin disimulasikan dari pemindaian ini.</p>
@@ -497,7 +504,7 @@
                                 
                                 <div class="flex gap-4">
                                     <button @click="generateReport" class="flex-1 bg-primary hover:bg-blue-600 transition text-white px-4 py-3 rounded-xl font-bold text-sm text-center">
-                                        <i class="fa-solid fa-file-medical mr-2"></i> Buat Care-Connect Report
+                                        <i class="fa-solid fa-file-pdf mr-2"></i> Pratinjau & Unduh PDF
                                     </button>
                                     <button @click="finishMeasurement" class="flex-1 bg-slate-700 hover:bg-slate-600 transition text-white px-4 py-3 rounded-xl font-bold text-sm text-center">
                                         Selesai
@@ -656,48 +663,180 @@
             </button>
         </div>
 
-        <!-- Care Connect Report Modal (Simulasi) -->
-        <div v-if="showReport" class="fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-            <div class="bg-white w-full max-w-lg rounded-2xl shadow-xl overflow-hidden flex flex-col max-h-[90vh]">
-                <div class="bg-slate-800 p-4 text-white flex justify-between items-center">
-                    <h3 class="font-bold"><i class="fa-solid fa-file-medical mr-2"></i> Care Connect Report</h3>
-                    <button @click="showReport = false" class="text-slate-300 hover:text-white"><i class="fa-solid fa-times text-xl"></i></button>
-                </div>
-                <!-- Tambahkan ID reportContent agar bisa di-target oleh PDF generator -->
-                <div id="reportContent" class="p-6 overflow-y-auto font-mono text-sm text-slate-700 bg-slate-50 flex-grow">
-                    <div class="border-b-2 border-dashed border-slate-300 pb-4 mb-4 text-center">
-                        <h2 class="text-xl font-bold text-slate-800">TENSIGUARD HEALTH REPORT</h2>
-                        <p class="text-xs text-slate-500">Generated: {{ new Date().toLocaleString() }}</p>
+        <!-- Care Connect Report Modal (Simulasi PDF Preview) -->
+        <div v-if="showReport" class="fixed inset-0 bg-slate-900/70 backdrop-blur-sm z-50 flex items-center justify-center p-2 md:p-6 slide-up-enter-active">
+            <div class="bg-slate-100 w-full max-w-4xl rounded-2xl shadow-2xl flex flex-col h-full max-h-[95vh] overflow-hidden border border-slate-300">
+                
+                <!-- Modal Header -->
+                <div class="bg-slate-800 p-4 text-white flex justify-between items-center shadow-md z-10">
+                    <div>
+                        <h3 class="font-bold text-lg"><i class="fa-solid fa-file-pdf text-red-400 mr-2"></i> Pratinjau Dokumen</h3>
+                        <p class="text-xs text-slate-300">Format PDF Ukuran A4</p>
                     </div>
-                    <p><strong>Patient:</strong> {{ user.name }} ({{ user.age }}y, {{ calculatedBMI }} BMI)</p>
-                    <p><strong>History:</strong> {{ user.historyHT ? 'HT(+)' : 'HT(-)' }}, Fam: {{ user.familyHT ? 'HT(+)' : 'HT(-)' }}</p>
-                    <div class="my-4 border-l-4 border-primary pl-3 bg-white p-2">
-                        <p class="text-2xl font-black text-slate-800">{{ currentRead.sys }} / {{ currentRead.dia }} mmHg</p>
-                        <p>Pulse: {{ currentRead.pulse }} bpm</p>
-                        <p v-if="measureHistory.length > 0" class="text-xs text-slate-500 mt-1">Confirmed with {{ measureHistory.length + 1 }} measurements.</p>
-                    </div>
-                    <p><strong>Device ID:</strong> {{ selectedDevice.id }} ({{ selectedDevice.status.toUpperCase() }})</p>
-                    <p><strong>BP Trend:</strong> Increasing 🟠</p>
-                    <p><strong>Tensi-Screen:</strong> {{ diagnosisResult.screenCategory }}</p>
-                    <p><strong>Risk Score:</strong> {{ diagnosisResult.score }}/100 ({{ diagnosisResult.statusLabel }})</p>
-                    <div class="mt-4 p-3 bg-white border border-slate-200 rounded">
-                        <p class="font-bold text-xs mb-1">AI Recommendation:</p>
-                        <p class="text-xs">"{{ diagnosisResult.careAction }}"</p>
-                    </div>
-                    <!-- Sembunyikan instruksi scan QR saat diunduh sebagai PDF atau biarkan sebagai estetika dokumen -->
-                    <div class="mt-6 text-center text-xs text-slate-400">
-                        <p>Scan QR for digital verification</p>
-                        <i class="fa-solid fa-qrcode text-4xl mt-2 text-slate-800"></i>
+                    <div class="flex items-center gap-3">
+                        <button @click="downloadPDF" :disabled="isDownloading" class="bg-primary hover:bg-blue-600 text-white px-4 py-2 rounded-lg font-bold transition flex items-center gap-2 shadow-lg">
+                            <i v-if="isDownloading" class="fa-solid fa-spinner animate-spin"></i>
+                            <i v-else class="fa-solid fa-download"></i>
+                            <span class="hidden md:inline">{{ isDownloading ? 'Memproses...' : 'Unduh PDF Sekarang' }}</span>
+                        </button>
+                        <button @click="showReport = false" class="bg-slate-700 hover:bg-slate-600 p-2 rounded-lg text-white transition">
+                            <i class="fa-solid fa-times text-xl"></i>
+                        </button>
                     </div>
                 </div>
-                <div class="p-4 bg-white border-t border-slate-200 flex gap-4">
-                    <!-- Tombol Unduh PDF ditambahkan -->
-                    <button @click="downloadPDF" :disabled="isDownloading" class="flex-1 bg-slate-800 text-white py-2 rounded-lg font-bold hover:bg-slate-700 transition flex items-center justify-center gap-2">
-                        <i v-if="isDownloading" class="fa-solid fa-spinner animate-spin"></i>
-                        <i v-else class="fa-solid fa-file-pdf"></i>
-                        {{ isDownloading ? 'Memproses...' : 'Unduh PDF' }}
-                    </button>
-                    <button @click="showReport = false; currentView = 'dashboard'" class="flex-1 bg-primary text-white py-2 rounded-lg font-bold shadow-md hover:bg-blue-700 transition">Tutup & Kembali</button>
+
+                <!-- Modal Body (The Preview Area) -->
+                <div class="overflow-y-auto doc-scroll bg-slate-200 flex-grow py-8 flex justify-center items-start">
+                    
+                    <!-- KERTAS LAPORAN A4 (Fixed Width agar hasil PDF rapi) -->
+                    <!-- Ukuran lebar ditetapkan 800px untuk merender PDF dengan presisi tinggi menggunakan html2canvas -->
+                    <div id="reportContent" class="bg-white w-[800px] min-h-[1131px] mx-auto shadow-xl border border-slate-200 relative shrink-0 p-12 flex flex-col text-slate-800 font-sans">
+                        
+                        <!-- Header Laporan -->
+                        <div class="flex justify-between items-end border-b-4 border-primary pb-4 mb-8">
+                            <div class="flex items-center gap-3">
+                                <div class="bg-primary text-white p-3 rounded-xl shadow-sm"><i class="fa-solid fa-heart-pulse text-3xl"></i></div>
+                                <div>
+                                    <h1 class="text-3xl font-black text-slate-900 tracking-tight">TENSIGUARD</h1>
+                                    <p class="text-sm font-bold text-primary tracking-widest uppercase">Medical Care-Connect</p>
+                                </div>
+                            </div>
+                            <div class="text-right">
+                                <h2 class="text-2xl font-bold text-slate-800 uppercase tracking-wide">Health Report</h2>
+                                <p class="text-sm text-slate-500 font-medium mt-1">Generated: {{ new Date().toLocaleDateString('id-ID', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' }) }}</p>
+                                <p class="text-xs text-slate-400">Ref: TGRD-{{ Math.floor(Math.random() * 1000000) }}</p>
+                            </div>
+                        </div>
+
+                        <!-- Data Pasien -->
+                        <div class="mb-8">
+                            <h3 class="text-lg font-bold border-b-2 border-slate-100 pb-2 mb-4 text-slate-700 uppercase"><i class="fa-solid fa-user-injured mr-2"></i> Informasi Pasien</h3>
+                            <div class="grid grid-cols-2 gap-y-4 gap-x-8 bg-slate-50 p-6 rounded-xl border border-slate-100">
+                                <div>
+                                    <p class="text-xs text-slate-500 font-bold uppercase mb-1">Nama Lengkap</p>
+                                    <p class="text-lg font-semibold text-slate-900">{{ user.name }}</p>
+                                </div>
+                                <div>
+                                    <p class="text-xs text-slate-500 font-bold uppercase mb-1">Usia / Antropometri</p>
+                                    <p class="text-base font-medium text-slate-800">{{ user.age }} Tahun | TB: {{ user.height }}cm | BB: {{ user.weight }}kg</p>
+                                </div>
+                                <div>
+                                    <p class="text-xs text-slate-500 font-bold uppercase mb-1">Kategori BMI</p>
+                                    <p class="text-base font-medium text-slate-800">{{ calculatedBMI }} ({{ bmiCategory }})</p>
+                                </div>
+                                <div>
+                                    <p class="text-xs text-slate-500 font-bold uppercase mb-1">Riwayat Hipertensi</p>
+                                    <p class="text-base font-medium text-slate-800">
+                                        Pribadi: <span :class="user.historyHT ? 'text-red-600 font-bold' : 'text-slate-600'">{{ user.historyHT ? 'Ada' : 'Tidak Ada' }}</span> | 
+                                        Keluarga: <span :class="user.familyHT ? 'text-red-600 font-bold' : 'text-slate-600'">{{ user.familyHT ? 'Ada' : 'Tidak Ada' }}</span>
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Hasil Pengukuran (Inti) -->
+                        <div class="mb-8">
+                            <h3 class="text-lg font-bold border-b-2 border-slate-100 pb-2 mb-4 text-slate-700 uppercase"><i class="fa-solid fa-stethoscope mr-2"></i> Hasil Pengukuran Tensi-Vision</h3>
+                            
+                            <div class="flex items-center gap-6 mb-4">
+                                <div class="bg-blue-50 border-l-8 border-primary p-6 flex-grow rounded-r-xl">
+                                    <p class="text-sm font-bold text-primary uppercase tracking-wider mb-2">Blood Pressure (SYS/DIA)</p>
+                                    <div class="flex items-baseline gap-2">
+                                        <span class="text-6xl font-black text-slate-900">{{ currentRead.sys }}</span>
+                                        <span class="text-4xl font-black text-slate-400">/</span>
+                                        <span class="text-6xl font-black text-slate-900">{{ currentRead.dia }}</span>
+                                        <span class="text-xl font-bold text-slate-500 ml-2">mmHg</span>
+                                    </div>
+                                </div>
+                                <div class="bg-slate-50 border border-slate-200 p-6 w-48 text-center rounded-xl flex-shrink-0">
+                                    <p class="text-sm font-bold text-slate-500 uppercase tracking-wider mb-2">Pulse Rate</p>
+                                    <div class="flex items-baseline justify-center gap-1">
+                                        <span class="text-5xl font-black text-slate-800">{{ currentRead.pulse }}</span>
+                                        <span class="text-lg font-bold text-slate-500">bpm</span>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="flex gap-4">
+                                <div class="flex-1 bg-white border border-slate-200 p-4 rounded-xl flex items-start gap-3">
+                                    <i class="fa-solid fa-microchip text-slate-400 mt-1"></i>
+                                    <div>
+                                        <p class="text-xs font-bold text-slate-500 uppercase">Device Calibra-Guard</p>
+                                        <p class="text-sm font-medium text-slate-800 mt-1">ID: {{ selectedDevice.id }}</p>
+                                        <p :class="['text-xs font-bold mt-1', selectedDevice.status === 'valid' ? 'text-green-600' : 'text-red-600']">
+                                            Status: {{ selectedDevice.status === 'valid' ? 'Verified Calibration (Akurat)' : 'Unverified (Perlu Verifikasi)' }}
+                                        </p>
+                                    </div>
+                                </div>
+                                <div v-if="measureHistory.length > 0" class="flex-1 bg-white border border-slate-200 p-4 rounded-xl flex items-start gap-3">
+                                    <i class="fa-solid fa-rotate-right text-orange-400 mt-1"></i>
+                                    <div>
+                                        <p class="text-xs font-bold text-slate-500 uppercase">Smart Verification</p>
+                                        <p class="text-sm font-medium text-slate-800 mt-1">Hasil dikonfirmasi melalui {{ measureHistory.length + 1 }} kali pengukuran.</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Diagnosis & Analisis AI -->
+                        <div class="mb-8 grid grid-cols-2 gap-6">
+                            <!-- Kategori -->
+                            <div class="border border-slate-200 rounded-xl overflow-hidden">
+                                <div class="bg-slate-100 p-3 border-b border-slate-200">
+                                    <h4 class="text-sm font-bold text-slate-700 uppercase text-center">Early Hypertension Screening</h4>
+                                </div>
+                                <div class="p-6 text-center flex flex-col items-center justify-center h-full">
+                                    <div class="text-4xl mb-3">{{ diagnosisResult.screenIcon }}</div>
+                                    <h3 :class="['text-2xl font-black mb-2 uppercase', diagnosisResult.screenColorText]">{{ diagnosisResult.screenCategory }}</h3>
+                                    <p class="text-sm text-slate-600 font-medium">Kategori Tekanan Darah</p>
+                                </div>
+                            </div>
+                            
+                            <!-- Risk Score -->
+                            <div class="border border-slate-200 rounded-xl overflow-hidden relative">
+                                <div class="bg-slate-100 p-3 border-b border-slate-200">
+                                    <h4 class="text-sm font-bold text-slate-700 uppercase text-center">Tensi-Diagnose Risk Score</h4>
+                                </div>
+                                <div :class="['p-6 text-white text-center flex flex-col items-center justify-center h-full', diagnosisResult.colorClass]">
+                                    <div class="flex items-end justify-center gap-1 mb-2">
+                                        <span class="text-6xl font-black">{{ diagnosisResult.score }}</span>
+                                        <span class="text-xl font-bold opacity-80 mb-2">/ 100</span>
+                                    </div>
+                                    <div class="bg-white/20 backdrop-blur-md px-4 py-1.5 rounded-full text-sm font-bold uppercase tracking-widest shadow-inner">
+                                        Status: {{ diagnosisResult.statusLabel.split(' ')[1] }}
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Care Action -->
+                        <div class="mb-auto">
+                            <h3 class="text-lg font-bold border-b-2 border-slate-100 pb-2 mb-4 text-slate-700 uppercase"><i class="fa-solid fa-user-doctor mr-2"></i> Tensi-Care Recommendation</h3>
+                            <div class="bg-slate-800 text-white p-6 rounded-xl shadow-md border-l-4 border-blue-400">
+                                <p class="text-lg font-medium leading-relaxed italic">
+                                    "{{ diagnosisResult.careAction }}"
+                                </p>
+                            </div>
+                            <div class="mt-4 p-4 bg-slate-50 border border-slate-200 rounded-xl text-sm text-slate-600">
+                                <p><strong>Ringkasan Analisis AI:</strong> {{ diagnosisResult.summary }}</p>
+                            </div>
+                        </div>
+
+                        <!-- Footer Dokumen Laporan (Tetap di bawah) -->
+                        <div class="mt-12 pt-6 border-t-2 border-slate-200 flex justify-between items-end">
+                            <div class="text-xs text-slate-500 w-2/3 pr-8">
+                                <p class="font-bold text-slate-700 mb-1">PEMBERITAHUAN PENTING:</p>
+                                <p class="text-[10px] leading-relaxed text-justify">Dokumen ini dihasilkan secara otomatis oleh sistem TensiGuard AI Vision berdasarkan foto perangkat tensimeter digital dan data profil pengguna. Hasil ini ditujukan sebagai skrining awal dan <strong>bukan merupakan diagnosis medis final</strong>. Konsultasikan dengan dokter atau tenaga profesional medis untuk evaluasi klinis dan penanganan lebih lanjut.</p>
+                            </div>
+                            <div class="w-1/3 flex flex-col items-end">
+                                <div class="bg-white p-2 border border-slate-200 rounded-lg inline-block text-center shadow-sm">
+                                    <i class="fa-solid fa-qrcode text-5xl text-slate-800"></i>
+                                    <p class="text-[9px] font-bold text-slate-500 mt-1 uppercase">Verifikasi Digital</p>
+                                </div>
+                            </div>
+                        </div>
+
+                    </div>
                 </div>
             </div>
         </div>
@@ -735,7 +874,7 @@
                         <div class="bg-blue-100 text-primary w-8 h-8 rounded-full flex items-center justify-center font-bold flex-shrink-0">4</div>
                         <div>
                             <h4 class="font-bold text-slate-800">Verifikasi & Analisis Risiko</h4>
-                            <p class="text-sm text-slate-600 mt-1">AI akan mendeteksi angka secara otomatis. Verifikasi kecocokannya. TENSIGUARD kemudian akan menghitung skor risiko (Tensi-Diagnose) dan memberikan langkah tindak lanjut (Tensi-Care).</p>
+                            <p class="text-sm text-slate-600 mt-1">AI akan mendeteksi angka secara otomatis. Verifikasi kecocokannya. TENSIGUARD kemudian akan menghitung skor risiko dan membuat Laporan PDF (Care-Connect).</p>
                         </div>
                     </div>
                 </div>
@@ -959,9 +1098,6 @@
                         this.currentRead.sys = 158;
                         this.currentRead.dia = 99;
                     }
-                    
-                    // Mempertahankan Re-measure panel tetap terbuka sampai pengguna yang menutup secara manual,
-                    // sekaligus menampilkan alert "Persistent High Reading" secara dinamis di HTML.
                 },
                 generateReport() {
                     this.showReport = true;
@@ -971,13 +1107,13 @@
                     
                     const element = document.getElementById('reportContent');
                     
-                    // Opsi konfigurasi html2pdf
+                    // Opsi konfigurasi html2pdf, menyesuaikan dengan resolusi cetak yang rapi
                     const opt = {
-                        margin:       15,
+                        margin:       0, // Margin nol karena sudah diatur via padding CSS
                         filename:     `TensiGuard_Report_${this.user.name.replace(/\s+/g, '_')}_${new Date().toISOString().slice(0,10)}.pdf`,
-                        image:        { type: 'jpeg', quality: 0.98 },
-                        html2canvas:  { scale: 2, useCORS: true },
-                        jsPDF:        { unit: 'mm', format: 'a4', orientation: 'portrait' }
+                        image:        { type: 'jpeg', quality: 1.0 },
+                        html2canvas:  { scale: 2, useCORS: true, windowWidth: 800 },
+                        jsPDF:        { unit: 'px', format: [800, 1131], orientation: 'portrait' }
                     };
 
                     // Eksekusi pembuatan PDF
@@ -991,7 +1127,6 @@
                 },
                 finishMeasurement() {
                     this.currentView = 'dashboard';
-                    // Disini idealnya data disimpan ke database
                 },
                 renderChart() {
                     const ctx = document.getElementById('trendChart');
@@ -1049,7 +1184,6 @@
             watch: {
                 currentView(newVal) {
                     if(newVal === 'trends') {
-                        // Render chart sedikit delay agar DOM siap setelah transisi Vue
                         setTimeout(() => {
                             this.renderChart();
                         }, 100);

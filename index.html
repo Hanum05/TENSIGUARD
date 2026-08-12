@@ -1,0 +1,791 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TENSIGUARD - AI & Smart Calibration</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: { sans: ['Inter', 'sans-serif'] },
+                    colors: {
+                        primary: '#2563eb',
+                        secondary: '#475569',
+                        success: '#10b981',
+                        warning: '#f59e0b',
+                        danger: '#ef4444',
+                        dark: '#1e293b'
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        body { font-family: 'Inter', sans-serif; background-color: #f8fafc; }
+        .fade-enter-active, .fade-leave-active { transition: opacity 0.3s ease; }
+        .fade-enter-from, .fade-leave-to { opacity: 0; }
+        .slide-up-enter-active, .slide-up-leave-active { transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1); }
+        .slide-up-enter-from, .slide-up-leave-to { transform: translateY(20px); opacity: 0; }
+    </style>
+</head>
+<body class="text-slate-800 antialiased">
+    <div id="app" class="min-h-screen flex flex-col md:flex-row pb-20 md:pb-0">
+        
+        <!-- Sidebar Navigation (Desktop) / Topbar (Mobile) -->
+        <nav class="bg-white border-b md:border-r border-slate-200 md:w-64 flex-shrink-0 z-10 hidden md:flex md:flex-col fixed md:relative h-full top-0">
+            <div class="p-6 border-b border-slate-100 flex items-center gap-3">
+                <div class="bg-primary text-white p-2 rounded-lg"><i class="fa-solid fa-heart-pulse text-xl"></i></div>
+                <h1 class="text-xl font-bold text-dark tracking-tight">TENSIGUARD</h1>
+            </div>
+            <div class="p-4 flex flex-col gap-2 flex-grow">
+                <button @click="currentView = 'dashboard'" :class="['nav-btn text-left px-4 py-3 rounded-xl transition-all font-medium flex items-center gap-3', currentView === 'dashboard' ? 'bg-blue-50 text-primary' : 'text-slate-500 hover:bg-slate-50']">
+                    <i class="fa-solid fa-house w-5"></i> Beranda
+                </button>
+                <button @click="currentView = 'measure'" :class="['nav-btn text-left px-4 py-3 rounded-xl transition-all font-medium flex items-center gap-3', currentView === 'measure' ? 'bg-blue-50 text-primary' : 'text-slate-500 hover:bg-slate-50']">
+                    <i class="fa-solid fa-camera w-5"></i> Ukur & AI Vision
+                </button>
+                <button @click="currentView = 'trends'" :class="['nav-btn text-left px-4 py-3 rounded-xl transition-all font-medium flex items-center gap-3', currentView === 'trends' ? 'bg-blue-50 text-primary' : 'text-slate-500 hover:bg-slate-50']">
+                    <i class="fa-solid fa-chart-line w-5"></i> Tren BP
+                </button>
+                <button @click="currentView = 'profile'" :class="['nav-btn text-left px-4 py-3 rounded-xl transition-all font-medium flex items-center gap-3', currentView === 'profile' ? 'bg-blue-50 text-primary' : 'text-slate-500 hover:bg-slate-50']">
+                    <i class="fa-solid fa-user w-5"></i> Tensi-Profile
+                </button>
+                <div class="my-4 border-t border-slate-100"></div>
+                <button @click="currentView = 'pro'" :class="['nav-btn text-left px-4 py-3 rounded-xl transition-all font-medium flex items-center gap-3', currentView === 'pro' ? 'bg-slate-800 text-white' : 'text-slate-600 hover:bg-slate-100']">
+                    <i class="fa-solid fa-hospital w-5"></i> TensiGuard PRO
+                </button>
+            </div>
+        </nav>
+
+        <!-- Mobile Header -->
+        <div class="md:hidden bg-white p-4 border-b border-slate-200 flex justify-between items-center sticky top-0 z-20">
+            <div class="flex items-center gap-2">
+                <div class="bg-primary text-white p-1.5 rounded-md"><i class="fa-solid fa-heart-pulse text-sm"></i></div>
+                <h1 class="text-lg font-bold text-dark">TENSIGUARD</h1>
+            </div>
+            <button @click="currentView = 'pro'" class="text-xs bg-slate-800 text-white px-3 py-1.5 rounded-full font-medium">PRO View</button>
+        </div>
+
+        <!-- Main Content Area -->
+        <main class="flex-grow p-4 md:p-8 max-w-5xl mx-auto w-full overflow-y-auto">
+            
+            <transition name="fade" mode="out-in">
+                
+                <!-- VIEW: PROFILE -->
+                <div v-if="currentView === 'profile'" key="profile" class="space-y-6">
+                    <div>
+                        <h2 class="text-2xl font-bold text-slate-800">👤 Tensi-Profile</h2>
+                        <p class="text-slate-500 text-sm mt-1">Personalisasi data Anda agar AI dapat memberikan konteks skrining yang akurat.</p>
+                    </div>
+                    
+                    <div class="bg-white rounded-2xl shadow-sm border border-slate-100 p-6">
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            <div>
+                                <label class="block text-sm font-medium text-slate-700 mb-1">Nama Lengkap</label>
+                                <input v-model="user.name" type="text" class="w-full border border-slate-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-primary focus:border-primary outline-none transition">
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-slate-700 mb-1">Usia (Tahun)</label>
+                                <input v-model.number="user.age" type="number" class="w-full border border-slate-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-primary outline-none transition">
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-slate-700 mb-1">Berat Badan (kg)</label>
+                                <input v-model.number="user.weight" type="number" class="w-full border border-slate-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-primary outline-none transition">
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-slate-700 mb-1">Tinggi Badan (cm)</label>
+                                <input v-model.number="user.height" type="number" class="w-full border border-slate-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-primary outline-none transition">
+                            </div>
+                            <div class="md:col-span-2">
+                                <p class="text-sm font-medium text-slate-700 mb-3">Informasi Kesehatan</p>
+                                <div class="flex flex-col gap-3">
+                                    <label class="flex items-center gap-3 p-3 border border-slate-200 rounded-lg cursor-pointer hover:bg-slate-50">
+                                        <input type="checkbox" v-model="user.historyHT" class="w-5 h-5 text-primary rounded focus:ring-primary">
+                                        <span class="text-sm text-slate-700">Saya memiliki riwayat Hipertensi sebelumnya</span>
+                                    </label>
+                                    <label class="flex items-center gap-3 p-3 border border-slate-200 rounded-lg cursor-pointer hover:bg-slate-50">
+                                        <input type="checkbox" v-model="user.familyHT" class="w-5 h-5 text-primary rounded focus:ring-primary">
+                                        <span class="text-sm text-slate-700">Ada riwayat Hipertensi di keluarga saya</span>
+                                    </label>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="mt-6 flex justify-between items-center bg-blue-50 p-4 rounded-xl border border-blue-100">
+                            <div>
+                                <p class="text-sm text-blue-800 font-medium">BMI Anda: <span class="font-bold text-lg">{{ calculatedBMI }}</span></p>
+                                <p class="text-xs text-blue-600">{{ bmiCategory }}</p>
+                            </div>
+                            <button @click="currentView = 'dashboard'" class="bg-primary text-white px-6 py-2 rounded-lg font-medium shadow-sm hover:bg-blue-700 transition">Simpan Profil</button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- VIEW: DASHBOARD -->
+                <div v-else-if="currentView === 'dashboard'" key="dashboard" class="space-y-6">
+                    <div class="flex justify-between items-end">
+                        <div>
+                            <h2 class="text-2xl font-bold text-slate-800">Halo, {{ user.name.split(' ')[0] || 'Pengguna' }} 👋</h2>
+                            <p class="text-slate-500 mt-1">Pantau tekanan darah dan keandalan alat ukur Anda.</p>
+                        </div>
+                    </div>
+
+                    <!-- Smart Reminders -->
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div class="bg-gradient-to-r from-blue-600 to-indigo-600 rounded-2xl p-5 text-white shadow-md flex items-center gap-4 relative overflow-hidden">
+                            <i class="fa-solid fa-bell text-3xl opacity-20 absolute right-4 bottom-4"></i>
+                            <div class="bg-white/20 p-3 rounded-full"><i class="fa-solid fa-stethoscope"></i></div>
+                            <div>
+                                <h3 class="font-semibold text-lg">Waktu Pengukuran</h3>
+                                <p class="text-blue-100 text-sm">Jadwal pengukuran rutin Anda hari ini.</p>
+                            </div>
+                        </div>
+                        <div class="bg-white border border-orange-200 rounded-2xl p-5 shadow-sm flex items-center gap-4">
+                            <div class="bg-orange-100 text-orange-600 p-3 rounded-full"><i class="fa-solid fa-screwdriver-wrench"></i></div>
+                            <div>
+                                <h3 class="font-semibold text-slate-800">Calibra-Guard Alert</h3>
+                                <p class="text-slate-500 text-sm">Alat (TG-0248) mendekati jadwal kalibrasi (2 bulan lagi).</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden">
+                        <div class="p-5 border-b border-slate-100 flex justify-between items-center bg-slate-50">
+                            <h3 class="font-bold text-slate-700"><i class="fa-solid fa-clock-rotate-left mr-2"></i> Pengukuran Terakhir</h3>
+                            <span class="text-xs font-medium bg-slate-200 text-slate-600 px-2 py-1 rounded-full">2 Hari Lalu</span>
+                        </div>
+                        <div class="p-6">
+                            <div class="flex flex-col md:flex-row items-center gap-8 justify-center">
+                                <div class="text-center">
+                                    <p class="text-slate-400 text-sm font-medium mb-1">Sistolik / Diastolik</p>
+                                    <div class="flex items-baseline justify-center gap-1">
+                                        <span class="text-5xl font-black text-slate-800">128</span>
+                                        <span class="text-3xl font-bold text-slate-400">/</span>
+                                        <span class="text-5xl font-black text-slate-800">82</span>
+                                    </div>
+                                    <p class="text-sm font-medium text-slate-500 mt-2">mmHg</p>
+                                </div>
+                                <div class="h-20 w-px bg-slate-200 hidden md:block"></div>
+                                <div class="flex flex-col gap-3 w-full md:w-auto">
+                                    <div class="bg-green-50 text-green-700 px-4 py-3 rounded-xl border border-green-100 flex items-center gap-3">
+                                        <i class="fa-solid fa-shield-check text-lg"></i>
+                                        <div>
+                                            <p class="text-xs font-bold uppercase tracking-wide">Status Alat</p>
+                                            <p class="text-sm font-medium">Terverifikasi (Akurat)</p>
+                                        </div>
+                                    </div>
+                                    <div class="bg-yellow-50 text-yellow-700 px-4 py-3 rounded-xl border border-yellow-100 flex items-center gap-3">
+                                        <i class="fa-solid fa-brain text-lg"></i>
+                                        <div>
+                                            <p class="text-xs font-bold uppercase tracking-wide">Tensi-Screen</p>
+                                            <p class="text-sm font-medium">Prahipertensi (Monitor)</p>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="p-4 bg-slate-50 text-center">
+                            <button @click="startMeasurement" class="bg-primary text-white w-full md:w-auto px-8 py-3 rounded-xl font-bold shadow-md shadow-blue-200 hover:bg-blue-700 transition transform hover:-translate-y-0.5">
+                                <i class="fa-solid fa-camera mr-2"></i> Mulai Pengukuran Baru
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- VIEW: MEASURE FLOW -->
+                <div v-else-if="currentView === 'measure'" key="measure" class="space-y-6">
+                    <div class="flex items-center gap-4">
+                        <button v-if="measureStep > 1" @click="measureStep--" class="text-slate-400 hover:text-slate-800"><i class="fa-solid fa-arrow-left text-xl"></i></button>
+                        <h2 class="text-2xl font-bold text-slate-800">
+                            {{ measureStep === 1 ? '🩺 Calibra-Guard' : measureStep === 2 ? '📸 Tensi-Vision' : measureStep === 3 ? '🔐 Measure-Verify' : '🧠 Tensi-Diagnose' }}
+                        </h2>
+                    </div>
+
+                    <!-- Step 1: Select Device -->
+                    <div v-if="measureStep === 1" class="bg-white rounded-2xl shadow-sm border border-slate-100 p-6 slide-up-enter-active">
+                        <p class="text-slate-600 mb-6">Pilih perangkat yang akan digunakan. Sistem akan memverifikasi status kalibrasinya untuk menjamin keandalan hasil.</p>
+                        
+                        <div class="space-y-4">
+                            <div v-for="device in myDevices" :key="device.id" 
+                                @click="selectDevice(device)"
+                                :class="['border-2 p-4 rounded-xl cursor-pointer transition-all flex items-center justify-between', selectedDevice?.id === device.id ? 'border-primary bg-blue-50' : 'border-slate-200 hover:border-blue-300']">
+                                <div class="flex items-center gap-4">
+                                    <div class="bg-slate-100 p-3 rounded-lg"><i class="fa-solid fa-mobile-screen text-slate-600 text-xl"></i></div>
+                                    <div>
+                                        <h4 class="font-bold text-slate-800">{{ device.name }}</h4>
+                                        <p class="text-sm text-slate-500 text-sm">ID: {{ device.id }}</p>
+                                    </div>
+                                </div>
+                                <div class="text-right">
+                                    <span v-if="device.status === 'valid'" class="inline-flex items-center gap-1 bg-green-100 text-green-700 text-xs font-bold px-2 py-1 rounded-full">
+                                        <i class="fa-solid fa-check-circle"></i> Kalibrasi Valid
+                                    </span>
+                                    <span v-else class="inline-flex items-center gap-1 bg-red-100 text-red-700 text-xs font-bold px-2 py-1 rounded-full">
+                                        <i class="fa-solid fa-triangle-exclamation"></i> Perlu Kalibrasi
+                                    </span>
+                                    <p class="text-xs text-slate-400 mt-1">Cek: {{ device.nextCheck }}</p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="mt-8 flex justify-end">
+                            <button @click="measureStep = 2" :disabled="!selectedDevice" :class="['px-6 py-3 rounded-xl font-bold transition', selectedDevice ? 'bg-primary text-white shadow-md' : 'bg-slate-200 text-slate-400 cursor-not-allowed']">
+                                Lanjutkan <i class="fa-solid fa-arrow-right ml-2"></i>
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Step 2: AI Vision Simulator -->
+                    <div v-if="measureStep === 2" class="bg-white rounded-2xl shadow-sm border border-slate-100 p-6 slide-up-enter-active text-center">
+                        <div v-if="!isScanning">
+                            <div class="w-full max-w-md mx-auto aspect-[4/3] bg-slate-100 rounded-xl border-2 border-dashed border-slate-300 flex flex-col items-center justify-center p-6 mb-6">
+                                <i class="fa-solid fa-camera text-5xl text-slate-300 mb-4"></i>
+                                <p class="text-slate-500 mb-2">Arahkan kamera ke layar tensimeter digital Anda</p>
+                                <p class="text-xs text-slate-400">AI Vision akan membaca angka secara otomatis</p>
+                            </div>
+                            <div class="flex gap-4 justify-center">
+                                <button @click="simulateScan('normal')" class="bg-slate-800 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-slate-700">Simulasi (Normal)</button>
+                                <button @click="simulateScan('high')" class="bg-danger text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-red-700">Simulasi (Tinggi - Demo)</button>
+                            </div>
+                        </div>
+                        
+                        <div v-else class="py-12">
+                            <div class="relative w-24 h-24 mx-auto mb-6">
+                                <div class="absolute inset-0 border-4 border-slate-200 rounded-full"></div>
+                                <div class="absolute inset-0 border-4 border-primary rounded-full border-t-transparent animate-spin"></div>
+                                <i class="fa-solid fa-robot absolute inset-0 flex items-center justify-center text-2xl text-primary"></i>
+                            </div>
+                            <h3 class="text-xl font-bold text-slate-800 animate-pulse">AI Sedang Mengekstrak Data...</h3>
+                            <p class="text-slate-500 text-sm mt-2">Membaca Sistolik, Diastolik, dan Nadi</p>
+                        </div>
+                    </div>
+
+                    <!-- Step 3 & 4: Result, Verify, Re-measure & Diagnose -->
+                    <div v-if="measureStep === 3" class="space-y-6 slide-up-enter-active">
+                        
+                        <!-- Measurement Verify Card -->
+                        <div class="bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden">
+                            <div class="bg-slate-800 text-white p-4 flex justify-between items-center">
+                                <h3 class="font-bold"><i class="fa-solid fa-microchip mr-2"></i> Hasil Ekstraksi AI Vision</h3>
+                                <button @click="measureStep = 2" class="text-xs bg-white/20 px-2 py-1 rounded hover:bg-white/30">Foto Ulang</button>
+                            </div>
+                            <div class="p-6">
+                                <div class="grid grid-cols-3 gap-4 text-center mb-6">
+                                    <div class="bg-slate-50 p-4 rounded-xl border border-slate-200">
+                                        <p class="text-xs font-bold text-slate-500 uppercase tracking-wider mb-1">SYS</p>
+                                        <input type="number" v-model="currentRead.sys" class="w-full text-center text-4xl font-black text-slate-800 bg-transparent border-b-2 border-transparent focus:border-primary outline-none">
+                                    </div>
+                                    <div class="bg-slate-50 p-4 rounded-xl border border-slate-200">
+                                        <p class="text-xs font-bold text-slate-500 uppercase tracking-wider mb-1">DIA</p>
+                                        <input type="number" v-model="currentRead.dia" class="w-full text-center text-4xl font-black text-slate-800 bg-transparent border-b-2 border-transparent focus:border-primary outline-none">
+                                    </div>
+                                    <div class="bg-slate-50 p-4 rounded-xl border border-slate-200">
+                                        <p class="text-xs font-bold text-slate-500 uppercase tracking-wider mb-1">PULSE</p>
+                                        <input type="number" v-model="currentRead.pulse" class="w-full text-center text-3xl font-bold text-slate-600 bg-transparent border-b-2 border-transparent focus:border-primary outline-none">
+                                    </div>
+                                </div>
+
+                                <!-- Measure-Verify Integration -->
+                                <div :class="['p-4 rounded-xl flex items-start gap-3 border', selectedDevice.status === 'valid' ? 'bg-green-50 border-green-200' : 'bg-red-50 border-red-200']">
+                                    <i :class="['fa-solid mt-0.5 text-lg', selectedDevice.status === 'valid' ? 'fa-shield-check text-green-600' : 'fa-triangle-exclamation text-red-600']"></i>
+                                    <div>
+                                        <h4 :class="['font-bold text-sm', selectedDevice.status === 'valid' ? 'text-green-800' : 'text-red-800']">
+                                            Keandalan Pengukuran: {{ selectedDevice.status === 'valid' ? 'TINGGI' : 'RENDAH' }}
+                                        </h4>
+                                        <p :class="['text-xs mt-1', selectedDevice.status === 'valid' ? 'text-green-700' : 'text-red-700']">
+                                            {{ selectedDevice.status === 'valid' 
+                                                ? 'Alat yang digunakan terkalibrasi. Hasil dapat diandalkan untuk skrining.' 
+                                                : 'Peringatan: Alat ini belum dikalibrasi. Pengukuran mungkin tidak akurat dan harus dikonfirmasi ulang dengan alat terstandar.' }}
+                                        </p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Re-Measure Guide Logic -->
+                        <div v-if="needsRemeasure" class="bg-orange-50 border-2 border-orange-200 rounded-2xl p-6 text-center shadow-sm">
+                            <div class="w-16 h-16 bg-orange-100 text-orange-500 rounded-full flex items-center justify-center mx-auto mb-4 text-2xl">
+                                <i class="fa-solid fa-rotate-right"></i>
+                            </div>
+                            <h3 class="text-xl font-bold text-orange-800 mb-2">🔄 Re-Measure Guide</h3>
+                            <p class="text-orange-700 text-sm mb-4">Hasil terdeteksi tinggi ({{currentRead.sys}}/{{currentRead.dia}}). Untuk akurasi skrining, mohon lakukan pengukuran ulang.</p>
+                            <ul class="text-sm text-orange-800 text-left bg-white p-4 rounded-xl border border-orange-100 inline-block mb-6 space-y-2">
+                                <li><i class="fa-solid fa-check text-green-500 mr-2"></i> Duduk santai selama 3-5 menit.</li>
+                                <li><i class="fa-solid fa-check text-green-500 mr-2"></i> Kaki menapak di lantai, tidak menyilang.</li>
+                                <li><i class="fa-solid fa-check text-green-500 mr-2"></i> Lengan setinggi jantung.</li>
+                            </ul>
+                            <div>
+                                <button @click="executeRemeasure" class="bg-orange-500 text-white px-6 py-2 rounded-xl font-bold shadow-md hover:bg-orange-600">Simulasi Ukur Ulang AI</button>
+                            </div>
+                        </div>
+
+                        <!-- Final Diagnosis Result (Appears when valid) -->
+                        <div v-if="!needsRemeasure" class="space-y-6 slide-up-enter-active">
+                            
+                            <!-- Safety Alert -->
+                            <div v-if="diagnosisResult.urgency === 'urgent'" class="bg-red-600 text-white rounded-2xl p-6 shadow-lg border-4 border-red-200 animate-pulse">
+                                <div class="flex items-start gap-4">
+                                    <i class="fa-solid fa-triangle-exclamation text-4xl mt-1"></i>
+                                    <div>
+                                        <h3 class="text-2xl font-black mb-2">🚨 SAFETY ALERT: URGENT MEDICAL ATTENTION</h3>
+                                        <p class="font-medium mb-4">Tekanan darah Anda sangat tinggi (Krisis Hipertensi). Jangan menunggu aplikasi memberikan diagnosis lebih lanjut.</p>
+                                        <div class="bg-red-800/50 p-4 rounded-xl">
+                                            <p class="text-sm font-bold mb-2">Apakah Anda mengalami salah satu gejala ini?</p>
+                                            <ul class="text-sm space-y-1">
+                                                <li>• Nyeri dada berat / Sesak napas</li>
+                                                <li>• Gangguan penglihatan / bicara</li>
+                                                <li>• Kelemahan / kebas mendadak</li>
+                                            </ul>
+                                            <button class="mt-4 bg-white text-red-700 font-bold px-4 py-2 rounded-lg w-full">HUBUNGI IGD / AMBULANS</button>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                <!-- Tensi-Diagnose (Risk Score) -->
+                                <div :class="['rounded-2xl p-6 text-white shadow-md relative overflow-hidden', diagnosisResult.colorClass]">
+                                    <i class="fa-solid fa-brain text-6xl opacity-10 absolute -right-4 -bottom-4"></i>
+                                    <h3 class="font-bold text-white/80 uppercase tracking-wider text-xs mb-4">🧠 TENSI-DIAGNOSE RISK SCORE</h3>
+                                    <div class="flex items-end gap-2 mb-2">
+                                        <span class="text-6xl font-black">{{ diagnosisResult.score }}</span>
+                                        <span class="text-xl font-medium text-white/70 mb-2">/ 100</span>
+                                    </div>
+                                    <div class="inline-block bg-white/20 backdrop-blur-sm px-3 py-1 rounded-full text-sm font-bold">
+                                        {{ diagnosisResult.statusLabel }}
+                                    </div>
+                                </div>
+
+                                <!-- Tensi-Screen Category -->
+                                <div class="bg-white rounded-2xl shadow-sm border border-slate-100 p-6 flex flex-col justify-center">
+                                    <h3 class="font-bold text-slate-500 uppercase tracking-wider text-xs mb-2">🩸 TENSI-SCREEN</h3>
+                                    <h2 class="text-2xl font-bold text-slate-800">{{ diagnosisResult.screenCategory }}</h2>
+                                    <p class="text-sm text-slate-600 mt-2">Ini adalah skrining awal berdasarkan klasifikasi standar, bukan diagnosis medis final.</p>
+                                </div>
+                            </div>
+
+                            <!-- Explainable AI -->
+                            <div class="bg-white rounded-2xl shadow-sm border border-slate-100 p-6">
+                                <h3 class="font-bold text-slate-800 mb-4"><i class="fa-solid fa-magnifying-glass-chart text-primary mr-2"></i> EXPLAINABLE AI: Mengapa Skor {{ diagnosisResult.score }}?</h3>
+                                <div class="space-y-3">
+                                    <div class="flex items-center gap-3" v-for="(reason, index) in diagnosisResult.reasons" :key="index">
+                                        <i :class="['fa-solid fa-circle text-[10px]', reason.type === 'danger' ? 'text-red-500' : reason.type === 'warning' ? 'text-orange-500' : 'text-green-500']"></i>
+                                        <p class="text-sm text-slate-700">
+                                            <span class="font-semibold">{{ reason.title }}:</span> {{ reason.desc }}
+                                        </p>
+                                    </div>
+                                </div>
+                                <div class="mt-4 p-3 bg-blue-50 text-blue-800 text-sm rounded-lg border border-blue-100">
+                                    <strong>Kesimpulan AI:</strong> {{ diagnosisResult.summary }}
+                                </div>
+                            </div>
+
+                            <!-- Tensi-Care Action -->
+                            <div class="bg-slate-800 rounded-2xl shadow-sm p-6 text-white">
+                                <h3 class="font-bold mb-4 text-blue-300"><i class="fa-solid fa-hand-holding-medical mr-2"></i> TENSI-CARE: Tindakan yang Disarankan</h3>
+                                <p class="text-lg font-medium leading-relaxed mb-6">{{ diagnosisResult.careAction }}</p>
+                                
+                                <div class="flex gap-4">
+                                    <button @click="generateReport" class="flex-1 bg-primary hover:bg-blue-600 transition text-white px-4 py-3 rounded-xl font-bold text-sm text-center">
+                                        <i class="fa-solid fa-file-medical mr-2"></i> Buat Care-Connect Report
+                                    </button>
+                                    <button @click="finishMeasurement" class="flex-1 bg-slate-700 hover:bg-slate-600 transition text-white px-4 py-3 rounded-xl font-bold text-sm text-center">
+                                        Selesai
+                                    </button>
+                                </div>
+                            </div>
+
+                        </div>
+                    </div>
+                </div>
+
+                <!-- VIEW: TRENDS -->
+                <div v-else-if="currentView === 'trends'" key="trends" class="space-y-6">
+                    <div>
+                        <h2 class="text-2xl font-bold text-slate-800">📈 Tensi-Trend</h2>
+                        <p class="text-slate-500 text-sm mt-1">Pemantauan pola tekanan darah Anda dari waktu ke waktu.</p>
+                    </div>
+
+                    <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-100">
+                        <div class="flex justify-between items-center mb-6">
+                            <h3 class="font-bold text-slate-700">Riwayat Pengukuran Terakhir</h3>
+                            <select class="bg-slate-50 border border-slate-200 text-sm rounded-lg px-3 py-1 outline-none">
+                                <option>1 Bulan Terakhir</option>
+                                <option>3 Bulan Terakhir</option>
+                            </select>
+                        </div>
+                        <div class="relative h-64 w-full">
+                            <canvas id="trendChart"></canvas>
+                        </div>
+                        
+                        <div class="mt-6 p-4 bg-orange-50 border border-orange-100 rounded-xl flex items-start gap-3">
+                            <i class="fa-solid fa-arrow-trend-up text-orange-500 mt-1"></i>
+                            <div>
+                                <h4 class="font-bold text-orange-800 text-sm">AI Trend Analysis</h4>
+                                <p class="text-orange-700 text-sm mt-1">Sistem mendeteksi <strong>Tren Meningkat (Increasing Trend)</strong> pada tekanan sistolik Anda selama 2 minggu terakhir. Disarankan untuk memantau asupan natrium dan berkonsultasi.</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- VIEW: PRO DASHBOARD -->
+                <div v-else-if="currentView === 'pro'" key="pro" class="space-y-6">
+                    <div class="flex flex-col md:flex-row md:justify-between md:items-end gap-4">
+                        <div>
+                            <span class="bg-slate-800 text-white text-xs font-bold px-2 py-1 rounded mb-2 inline-block">CLINIC / HOSPITAL VIEW</span>
+                            <h2 class="text-2xl font-bold text-slate-800">🏥 TensiGuard PRO</h2>
+                            <p class="text-slate-500 text-sm mt-1">Manajemen Inventaris & Mutu Alat Kesehatan Fasilitas.</p>
+                        </div>
+                    </div>
+
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                        <div class="bg-white p-5 rounded-xl border border-slate-200 shadow-sm flex items-center justify-between">
+                            <div>
+                                <p class="text-sm text-slate-500 font-medium">Total Perangkat</p>
+                                <h3 class="text-3xl font-black text-slate-800">128</h3>
+                            </div>
+                            <div class="w-12 h-12 rounded-full bg-blue-50 text-primary flex items-center justify-center text-xl"><i class="fa-solid fa-box"></i></div>
+                        </div>
+                        <div class="bg-white p-5 rounded-xl border border-slate-200 shadow-sm flex items-center justify-between">
+                            <div>
+                                <p class="text-sm text-slate-500 font-medium">Kalibrasi Valid <i class="fa-solid fa-circle-check text-green-500 ml-1"></i></p>
+                                <h3 class="text-3xl font-black text-slate-800">101</h3>
+                            </div>
+                        </div>
+                        <div class="bg-red-50 p-5 rounded-xl border border-red-200 shadow-sm flex items-center justify-between">
+                            <div>
+                                <p class="text-sm text-red-600 font-medium">Perlu Verifikasi <i class="fa-solid fa-triangle-exclamation text-red-500 ml-1"></i></p>
+                                <h3 class="text-3xl font-black text-red-700">8</h3>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
+                        <div class="p-4 bg-slate-50 border-b border-slate-200 font-bold text-slate-700 text-sm">
+                            Status Kalibrasi Alat per Ruangan
+                        </div>
+                        <div class="overflow-x-auto">
+                            <table class="w-full text-left text-sm text-slate-600">
+                                <thead class="bg-slate-50 text-slate-500 uppercase">
+                                    <tr>
+                                        <th class="px-4 py-3">ID Alat</th>
+                                        <th class="px-4 py-3">Lokasi</th>
+                                        <th class="px-4 py-3">Jadwal Kalibrasi</th>
+                                        <th class="px-4 py-3">Status</th>
+                                        <th class="px-4 py-3">Aksi</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr class="border-b border-slate-100">
+                                        <td class="px-4 py-3 font-medium text-slate-800">TG-0248</td>
+                                        <td class="px-4 py-3">Poli Umum 1</td>
+                                        <td class="px-4 py-3">10 Jan 2027</td>
+                                        <td class="px-4 py-3"><span class="bg-green-100 text-green-700 px-2 py-1 rounded text-xs font-bold">Valid</span></td>
+                                        <td class="px-4 py-3"><button class="text-primary hover:underline">Log</button></td>
+                                    </tr>
+                                    <tr class="border-b border-slate-100 bg-red-50/50">
+                                        <td class="px-4 py-3 font-medium text-slate-800">TG-0112</td>
+                                        <td class="px-4 py-3">IGD Bed 3</td>
+                                        <td class="px-4 py-3 text-red-600 font-medium">20 Jul 2026 (Lewat)</td>
+                                        <td class="px-4 py-3"><span class="bg-red-100 text-red-700 px-2 py-1 rounded text-xs font-bold">Unverified</span></td>
+                                        <td class="px-4 py-3"><button class="text-red-600 font-medium text-xs border border-red-200 px-2 py-1 rounded bg-white">Ajukan Kalibrasi</button></td>
+                                    </tr>
+                                    <tr class="border-b border-slate-100">
+                                        <td class="px-4 py-3 font-medium text-slate-800">TG-0305</td>
+                                        <td class="px-4 py-3">Rawat Inap Lt.2</td>
+                                        <td class="px-4 py-3">15 Sep 2026</td>
+                                        <td class="px-4 py-3"><span class="bg-yellow-100 text-yellow-700 px-2 py-1 rounded text-xs font-bold">Due Soon</span></td>
+                                        <td class="px-4 py-3"><button class="text-primary hover:underline">Log</button></td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+
+            </transition>
+        </main>
+
+        <!-- Mobile Bottom Nav -->
+        <div class="md:hidden fixed bottom-0 left-0 right-0 bg-white border-t border-slate-200 flex justify-around p-3 z-20">
+            <button @click="currentView = 'dashboard'" :class="['flex flex-col items-center gap-1', currentView === 'dashboard' ? 'text-primary' : 'text-slate-400']">
+                <i class="fa-solid fa-house text-lg"></i><span class="text-[10px] font-medium">Beranda</span>
+            </button>
+            <button @click="currentView = 'measure'" :class="['flex flex-col items-center gap-1', currentView === 'measure' ? 'text-primary' : 'text-slate-400']">
+                <div class="bg-primary text-white w-10 h-10 rounded-full flex items-center justify-center -mt-6 shadow-lg shadow-blue-200">
+                    <i class="fa-solid fa-camera"></i>
+                </div>
+                <span class="text-[10px] font-medium mt-1">Ukur</span>
+            </button>
+            <button @click="currentView = 'trends'" :class="['flex flex-col items-center gap-1', currentView === 'trends' ? 'text-primary' : 'text-slate-400']">
+                <i class="fa-solid fa-chart-line text-lg"></i><span class="text-[10px] font-medium">Tren</span>
+            </button>
+            <button @click="currentView = 'profile'" :class="['flex flex-col items-center gap-1', currentView === 'profile' ? 'text-primary' : 'text-slate-400']">
+                <i class="fa-solid fa-user text-lg"></i><span class="text-[10px] font-medium">Profil</span>
+            </button>
+        </div>
+
+        <!-- Care Connect Report Modal (Simulasi) -->
+        <div v-if="showReport" class="fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+            <div class="bg-white w-full max-w-lg rounded-2xl shadow-xl overflow-hidden flex flex-col max-h-[90vh]">
+                <div class="bg-slate-800 p-4 text-white flex justify-between items-center">
+                    <h3 class="font-bold"><i class="fa-solid fa-file-medical mr-2"></i> Care Connect Report</h3>
+                    <button @click="showReport = false" class="text-slate-300 hover:text-white"><i class="fa-solid fa-times text-xl"></i></button>
+                </div>
+                <div class="p-6 overflow-y-auto font-mono text-sm text-slate-700 bg-slate-50 flex-grow">
+                    <div class="border-b-2 border-dashed border-slate-300 pb-4 mb-4 text-center">
+                        <h2 class="text-xl font-bold text-slate-800">TENSIGUARD HEALTH REPORT</h2>
+                        <p class="text-xs text-slate-500">Generated: {{ new Date().toLocaleString() }}</p>
+                    </div>
+                    <p><strong>Patient:</strong> {{ user.name }} ({{ user.age }}y, {{ calculatedBMI }} BMI)</p>
+                    <p><strong>History:</strong> {{ user.historyHT ? 'HT(+)' : 'HT(-)' }}, Fam: {{ user.familyHT ? 'HT(+)' : 'HT(-)' }}</p>
+                    <div class="my-4 border-l-4 border-primary pl-3">
+                        <p class="text-2xl font-black text-slate-800">{{ currentRead.sys }} / {{ currentRead.dia }} mmHg</p>
+                        <p>Pulse: {{ currentRead.pulse }} bpm</p>
+                    </div>
+                    <p><strong>Device ID:</strong> {{ selectedDevice.id }} ({{ selectedDevice.status.toUpperCase() }})</p>
+                    <p><strong>Tensi-Screen:</strong> {{ diagnosisResult.screenCategory }}</p>
+                    <p><strong>Risk Score:</strong> {{ diagnosisResult.score }}/100 ({{ diagnosisResult.statusLabel }})</p>
+                    <div class="mt-4 p-3 bg-white border border-slate-200 rounded">
+                        <p class="font-bold text-xs mb-1">AI Recommendation:</p>
+                        <p class="text-xs">{{ diagnosisResult.careAction }}</p>
+                    </div>
+                    <div class="mt-6 text-center text-xs text-slate-400">
+                        <p>Scan QR for digital verification</p>
+                        <i class="fa-solid fa-qrcode text-4xl mt-2 text-slate-800"></i>
+                    </div>
+                </div>
+                <div class="p-4 bg-white border-t border-slate-200">
+                    <button @click="showReport = false; currentView = 'dashboard'" class="w-full bg-primary text-white py-2 rounded-lg font-bold">Tutup & Kembali</button>
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+    <script>
+        const { createApp } = Vue;
+
+        const app = createApp({
+            data() {
+                return {
+                    currentView: 'profile', // Mulai di profile untuk input data
+                    user: {
+                        name: 'Ahmad Wijaya',
+                        age: 45,
+                        weight: 75,
+                        height: 165,
+                        historyHT: false,
+                        familyHT: true
+                    },
+                    myDevices: [
+                        { id: 'TG-0248', name: 'Tensimeter Omron HEM-7120', status: 'valid', nextCheck: '10 Jan 2027' },
+                        { id: 'TG-9931', name: 'Tensimeter Cadangan (Klinik)', status: 'invalid', nextCheck: 'Lewat (12 Mar 2026)' }
+                    ],
+                    selectedDevice: null,
+                    measureStep: 1,
+                    isScanning: false,
+                    needsRemeasure: false,
+                    currentRead: { sys: null, dia: null, pulse: null },
+                    showReport: false,
+                    chartInstance: null
+                }
+            },
+            computed: {
+                calculatedBMI() {
+                    if(!this.user.height || !this.user.weight) return 0;
+                    const h = this.user.height / 100;
+                    return (this.user.weight / (h * h)).toFixed(1);
+                },
+                bmiCategory() {
+                    const bmi = this.calculatedBMI;
+                    if(bmi < 18.5) return 'Underweight';
+                    if(bmi >= 18.5 && bmi <= 24.9) return 'Normal weight';
+                    if(bmi >= 25 && bmi <= 29.9) return 'Overweight';
+                    return 'Obesity';
+                },
+                // Logika Tensi-Diagnose (Risk Score & Explainable AI)
+                diagnosisResult() {
+                    let score = 0;
+                    let sys = this.currentRead.sys || 120;
+                    let dia = this.currentRead.dia || 80;
+                    
+                    let screenCategory = "Normal";
+                    let urgency = "normal";
+                    let reasons = [];
+
+                    // 1. Hitung BP Category (JNC 8 / ACC AHA simplifikasi)
+                    if (sys >= 180 || dia >= 120) {
+                        score += 90; screenCategory = "Krisis Hipertensi"; urgency = "urgent";
+                        reasons.push({title: 'Sistolik/Diastolik Sangat Tinggi', desc: `Angka ${sys}/${dia} masuk kategori kritis darurat.`, type: 'danger'});
+                    } else if (sys >= 160 || dia >= 100) {
+                        score += 70; screenCategory = "Hipertensi Derajat 2";
+                        reasons.push({title: 'Tekanan Darah Tinggi', desc: `Berada pada level Hipertensi Derajat 2.`, type: 'danger'});
+                    } else if (sys >= 140 || dia >= 90) {
+                        score += 50; screenCategory = "Hipertensi Derajat 1";
+                        reasons.push({title: 'Tekanan Darah Meningkat', desc: `Melewati batas normal atas (Hipertensi Derajat 1).`, type: 'warning'});
+                    } else if (sys >= 120 || dia >= 80) {
+                        score += 30; screenCategory = "Prahipertensi / Elevated";
+                        reasons.push({title: 'Tekanan Darah Sedikit Naik', desc: `Berada di ambang batas kewaspadaan.`, type: 'warning'});
+                    } else {
+                        score += 10; screenCategory = "Normal";
+                        reasons.push({title: 'Tekanan Darah Ideal', desc: `Sistolik dan diastolik dalam batas sehat.`, type: 'success'});
+                    }
+
+                    // 2. Personal Context Modifier
+                    if(this.user.age > 50) { score += 10; reasons.push({title: 'Faktor Usia', desc: 'Risiko meningkat pada usia di atas 50 tahun.', type: 'warning'}); }
+                    if(this.calculatedBMI > 25) { score += 10; reasons.push({title: 'Faktor BMI', desc: 'Overweight/Obesitas membebani kerja jantung.', type: 'warning'}); }
+                    if(this.user.historyHT) { score += 15; reasons.push({title: 'Riwayat Hipertensi', desc: 'Terdata memiliki riwayat sebelumnya.', type: 'danger'}); }
+                    if(this.user.familyHT) { score += 5; reasons.push({title: 'Genetik', desc: 'Ada riwayat keturunan.', type: 'warning'}); }
+
+                    // 3. Calibra-Guard Context
+                    if(this.selectedDevice && this.selectedDevice.status !== 'valid') {
+                        reasons.push({title: 'Validasi Alat', desc: 'Skor ketidakpastian ditambah karena alat belum dikalibrasi.', type: 'warning'});
+                    } else {
+                        reasons.push({title: 'Validasi Alat', desc: 'Alat terkalibrasi, hasil dapat dipercaya.', type: 'success'});
+                    }
+
+                    score = Math.min(score, 100); // Max 100
+
+                    // Categorize Score
+                    let statusLabel, colorClass, careAction, summary;
+                    if (score < 20) {
+                        statusLabel = "🟢 Low Risk"; colorClass = "bg-gradient-to-br from-green-500 to-emerald-700";
+                        careAction = "Pertahankan pola hidup sehat dan lakukan pemantauan berkala.";
+                        summary = "Tidak menunjukkan pola risiko tinggi. Teruskan kebiasaan baik Anda.";
+                    } else if (score < 40) {
+                        statusLabel = "🟡 Monitor"; colorClass = "bg-gradient-to-br from-yellow-400 to-orange-500";
+                        careAction = "Pantau tekanan darah secara konsisten (1x seminggu) dan perhatikan trennya.";
+                        summary = "Ada sedikit peningkatan risiko dari profil atau tekanan darah. Perlu observasi ringan.";
+                    } else if (score < 60) {
+                        statusLabel = "🟠 Attention"; colorClass = "bg-gradient-to-br from-orange-500 to-red-500";
+                        careAction = "Kurangi asupan garam, perbaiki pola tidur. Ulangi pengukuran dalam beberapa hari ke depan.";
+                        summary = "Faktor risiko cukup signifikan. Mulai perbaiki gaya hidup (Diet DASH).";
+                    } else if (score < 80) {
+                        statusLabel = "🔴 High Risk"; colorClass = "bg-gradient-to-br from-red-600 to-rose-800";
+                        careAction = "Konfirmasi hasil ini dengan tenaga kesehatan/dokter di puskesmas atau klinik terdekat.";
+                        summary = "Kombinasi tekanan darah tinggi dan faktor risiko personal memerlukan evaluasi medis preventif.";
+                    } else {
+                        statusLabel = "🚨 Urgent"; colorClass = "bg-gradient-to-br from-red-700 to-red-950";
+                        careAction = "Segera hubungi layanan medis darurat (IGD) jika disertai gejala nyeri dada, sesak, atau kelemahan.";
+                        summary = "Peringatan kritis! Indikator menunjukkan kondisi yang berpotensi membahayakan organ tubuh.";
+                    }
+
+                    return { score, statusLabel, colorClass, screenCategory, urgency, reasons, careAction, summary };
+                }
+            },
+            methods: {
+                startMeasurement() {
+                    this.measureStep = 1;
+                    this.selectedDevice = null;
+                    this.needsRemeasure = false;
+                    this.currentView = 'measure';
+                },
+                selectDevice(device) {
+                    this.selectedDevice = device;
+                },
+                simulateScan(type) {
+                    this.isScanning = true;
+                    // Simulasi delay AI Processing (2 detik)
+                    setTimeout(() => {
+                        this.isScanning = false;
+                        if(type === 'high') {
+                            this.currentRead = { sys: 165, dia: 102, pulse: 92 };
+                            // Trigger Re-measure guide jika hasil tinggi di pembacaan pertama
+                            this.needsRemeasure = true; 
+                        } else {
+                            this.currentRead = { sys: 122, dia: 82, pulse: 75 };
+                            this.needsRemeasure = false;
+                        }
+                        this.measureStep = 3;
+                    }, 2000);
+                },
+                executeRemeasure() {
+                    // Simulasi hasil ukur ulang setelah istirahat (biasanya sedikit turun)
+                    this.currentRead.sys = this.currentRead.sys - 7;
+                    this.currentRead.dia = this.currentRead.dia - 3;
+                    this.currentRead.pulse = this.currentRead.pulse - 5;
+                    this.needsRemeasure = false; // Lanjut ke hasil akhir
+                },
+                generateReport() {
+                    this.showReport = true;
+                },
+                finishMeasurement() {
+                    this.currentView = 'dashboard';
+                    // Disini idealnya data disimpan ke database
+                },
+                renderChart() {
+                    const ctx = document.getElementById('trendChart');
+                    if(!ctx) return;
+
+                    if(this.chartInstance) {
+                        this.chartInstance.destroy();
+                    }
+
+                    this.chartInstance = new Chart(ctx, {
+                        type: 'line',
+                        data: {
+                            labels: ['1 Ags', '5 Ags', '10 Ags', '12 Ags', 'Hari Ini'],
+                            datasets: [
+                                {
+                                    label: 'Sistolik (SYS)',
+                                    data: [135, 140, 150, 155, 158],
+                                    borderColor: '#ef4444', // red
+                                    backgroundColor: 'rgba(239, 68, 68, 0.1)',
+                                    tension: 0.4,
+                                    fill: true,
+                                    borderWidth: 3
+                                },
+                                {
+                                    label: 'Diastolik (DIA)',
+                                    data: [85, 88, 92, 95, 99],
+                                    borderColor: '#3b82f6', // blue
+                                    backgroundColor: 'rgba(59, 130, 246, 0.1)',
+                                    tension: 0.4,
+                                    fill: true,
+                                    borderWidth: 3
+                                }
+                            ]
+                        },
+                        options: {
+                            responsive: true,
+                            maintainAspectRatio: false,
+                            plugins: {
+                                legend: { position: 'bottom' }
+                            },
+                            scales: {
+                                y: {
+                                    min: 60,
+                                    max: 200,
+                                    grid: { color: '#f1f5f9' }
+                                },
+                                x: {
+                                    grid: { display: false }
+                                }
+                            }
+                        }
+                    });
+                }
+            },
+            watch: {
+                currentView(newVal) {
+                    if(newVal === 'trends') {
+                        // Render chart sedikit delay agar DOM siap setelah transisi Vue
+                        setTimeout(() => {
+                            this.renderChart();
+                        }, 100);
+                    }
+                }
+            }
+        });
+
+        app.mount('#app');
+    </script>
+</body>
+</html>

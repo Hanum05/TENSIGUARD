@@ -8,6 +8,8 @@
     <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <!-- Tambahkan library html2pdf.js -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     
     <script>
@@ -661,7 +663,8 @@
                     <h3 class="font-bold"><i class="fa-solid fa-file-medical mr-2"></i> Care Connect Report</h3>
                     <button @click="showReport = false" class="text-slate-300 hover:text-white"><i class="fa-solid fa-times text-xl"></i></button>
                 </div>
-                <div class="p-6 overflow-y-auto font-mono text-sm text-slate-700 bg-slate-50 flex-grow">
+                <!-- Tambahkan ID reportContent agar bisa di-target oleh PDF generator -->
+                <div id="reportContent" class="p-6 overflow-y-auto font-mono text-sm text-slate-700 bg-slate-50 flex-grow">
                     <div class="border-b-2 border-dashed border-slate-300 pb-4 mb-4 text-center">
                         <h2 class="text-xl font-bold text-slate-800">TENSIGUARD HEALTH REPORT</h2>
                         <p class="text-xs text-slate-500">Generated: {{ new Date().toLocaleString() }}</p>
@@ -681,13 +684,20 @@
                         <p class="font-bold text-xs mb-1">AI Recommendation:</p>
                         <p class="text-xs">"{{ diagnosisResult.careAction }}"</p>
                     </div>
+                    <!-- Sembunyikan instruksi scan QR saat diunduh sebagai PDF atau biarkan sebagai estetika dokumen -->
                     <div class="mt-6 text-center text-xs text-slate-400">
                         <p>Scan QR for digital verification</p>
                         <i class="fa-solid fa-qrcode text-4xl mt-2 text-slate-800"></i>
                     </div>
                 </div>
-                <div class="p-4 bg-white border-t border-slate-200">
-                    <button @click="showReport = false; currentView = 'dashboard'" class="w-full bg-primary text-white py-2 rounded-lg font-bold">Tutup & Kembali</button>
+                <div class="p-4 bg-white border-t border-slate-200 flex gap-4">
+                    <!-- Tombol Unduh PDF ditambahkan -->
+                    <button @click="downloadPDF" :disabled="isDownloading" class="flex-1 bg-slate-800 text-white py-2 rounded-lg font-bold hover:bg-slate-700 transition flex items-center justify-center gap-2">
+                        <i v-if="isDownloading" class="fa-solid fa-spinner animate-spin"></i>
+                        <i v-else class="fa-solid fa-file-pdf"></i>
+                        {{ isDownloading ? 'Memproses...' : 'Unduh PDF' }}
+                    </button>
+                    <button @click="showReport = false; currentView = 'dashboard'" class="flex-1 bg-primary text-white py-2 rounded-lg font-bold shadow-md hover:bg-blue-700 transition">Tutup & Kembali</button>
                 </div>
             </div>
         </div>
@@ -764,6 +774,7 @@
                     symptoms: { chestPain: false, shortnessBreath: false, vision: false, speech: false, weakness: false, confusion: false },
                     currentRead: { sys: null, dia: null, pulse: null },
                     showReport: false,
+                    isDownloading: false,
                     chartInstance: null,
                     showGuide: false,
                     captureMode: 'camera', // 'camera' or 'upload'
@@ -954,6 +965,29 @@
                 },
                 generateReport() {
                     this.showReport = true;
+                },
+                downloadPDF() {
+                    this.isDownloading = true;
+                    
+                    const element = document.getElementById('reportContent');
+                    
+                    // Opsi konfigurasi html2pdf
+                    const opt = {
+                        margin:       15,
+                        filename:     `TensiGuard_Report_${this.user.name.replace(/\s+/g, '_')}_${new Date().toISOString().slice(0,10)}.pdf`,
+                        image:        { type: 'jpeg', quality: 0.98 },
+                        html2canvas:  { scale: 2, useCORS: true },
+                        jsPDF:        { unit: 'mm', format: 'a4', orientation: 'portrait' }
+                    };
+
+                    // Eksekusi pembuatan PDF
+                    html2pdf().set(opt).from(element).save().then(() => {
+                        this.isDownloading = false;
+                    }).catch(err => {
+                        console.error("Gagal membuat PDF: ", err);
+                        this.isDownloading = false;
+                        alert("Maaf, terjadi kesalahan saat mengunduh PDF.");
+                    });
                 },
                 finishMeasurement() {
                     this.currentView = 'dashboard';
